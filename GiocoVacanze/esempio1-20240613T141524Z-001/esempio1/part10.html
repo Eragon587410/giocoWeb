@@ -16,7 +16,7 @@
 
 var config = {
     type: Phaser.AUTO,
-    width: 800,
+    width: 1600,
     height: 600,
     physics: {
         default: 'arcade',
@@ -34,15 +34,29 @@ var config = {
 
 var player;
 var stars;
+var rKey;
 var bombs;
 var shields;
 var proiettili;
+var ascensori;
 var platforms;
 var cursors;
 var score = 0;
 var gameOver = false;
 var scoreText;
+var ammoText;
 var lives = 3;
+var fireRate = 500;
+var ultimoSparo = -fireRate;
+var isFiring = false;
+var posizione = false;
+var ascensore;
+var fermi;
+var fermo;
+var atterrato = false;
+var collisione = false;
+var shiftKey;
+var ammo;
 
 var game = new Phaser.Game(config);
 
@@ -62,27 +76,74 @@ function create ()
 {
     //  A simple background for our game
     this.add.image(400, 300, 'sky');
+    this.add.image(1200, 300, 'sky');
 
     //  The platforms group contains the ground and the 2 ledges we can jump on
     platforms = this.physics.add.staticGroup();
+    ascensori = this.physics.add.group();
+    fermi = this.physics.add.staticGroup();
 
     //  Here we create the ground.
     //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
     platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+    platforms.create(1200, 568, 'ground').setScale(2).refreshBody();
+    ascensore = ascensori.create(400, 500, 'ground');
+    ascensore.setCollideWorldBounds(true);
+    ascensore.body.setAllowGravity(false);
+    fermo = fermi.create(184, 336, 'ground').setAngle(90).refreshBody();
+    fermo.setSize(32, 400);
+    fermo.setOffset(-32, 0);
+    fermo = fermi.create(616, 336, 'ground').setAngle(90).refreshBody();
+    fermo.setSize(32, 400);
+    fermo.setOffset(-32, 0);
+
+    ammo = 6;
+    shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
+    rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+
+    boundsCollider = this.physics.add.sprite(0, 0, null);
+    boundsCollider.setSize(this.physics.world.bounds.width, 1); // Imposta la larghezza uguale a quella del mondo
+    boundsCollider.setOrigin(0, 0);
+    var graphics = this.add.graphics();
+    graphics.fillStyle(0xffffff); // Colore del triangolo (bianco)
+
+// Definisci i vertici del triangolo (esempio per un triangolo equilatero)
+    var trianglePoints = [
+        new Phaser.Geom.Point(100, 300), // Coordinata vertice 1
+        new Phaser.Geom.Point(300, 300), // Coordinata vertice 2
+        new Phaser.Geom.Point(200, 200)  // Coordinata vertice 3
+    ];
+
+    var triangle = new Phaser.Geom.Triangle(trianglePoints[0], trianglePoints[1], trianglePoints[2]);
+    graphics.fillTriangleShape(triangle);
+    graphics.closePath();
+
+    var triangleCollider = this.add.zone(trianglePoints[0].x, trianglePoints[0].y).setSize(200, 100);
+    this.physics.add.existing(triangleCollider);
+
+// Assegna il collider al triangolo
+    //triangleCollider.body.setTriangle(0, 0, 300 - 100, 300 - 300, 200 - 100, 200 - 300);
+
+
+// Aggiungi il corpo fisico al triangolo
+//this.physics.add.existing(triangolo);
+
+// Configura il corpo fisico del triangolo come poligono con i vertici definiti
+//triangolo.body.setPolygon(verticiTriangolo);
 
     //  Now let's create some ledges
-    platforms.create(600, 400, 'ground');
-    platforms.create(50, 250, 'ground');
-    platforms.create(750, 220, 'ground');
+    //platforms.create(600, 400, 'ground');
+    //platforms.create(50, 250, 'ground');
+    //platforms.create(750, 220, 'ground');
 
     // The player and its settings
-    player = this.physics.add.sprite(100, 450, 'dude');
+    player = this.physics.add.sprite(100, 400, 'dude');
 
     //  Player physics properties. Give the little guy a slight bounce.
-    player.setBounce(0.2);
+    player.setBounce(0);
     player.setCollideWorldBounds(true);
-    player.setSize(40, 60);
-    player.setOffset(40, 68);
+    player.setSize(40, 68);
+    player.setOffset(40, 60);
 
     
 
@@ -116,6 +177,19 @@ function create ()
         frameRate: 10,
         repeat: -1
     });
+    this.anims.create({
+        key: 'run',
+        frames: this.anims.generateFrameNumbers('dude', { start: 25, end: 32 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    this.anims.create({
+        key: 'reload',
+        frames: this.anims.generateFrameNumbers('dude', { start: 33, end: 45 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    
 
     //  Input Events
     cursors = this.input.keyboard.createCursorKeys();
@@ -145,13 +219,23 @@ function create ()
     //  The score
     scoreText = this.add.text(19, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
     livesText = this.add.text(16, 60, 'lives: '+ lives, { fontSize: '32px', fill: '#000' });
+    ammoText = this.add.text(16, 104, 'Munizioni: ' + ammo, { fontSize: '32px', fill: '#000' });
+
 
     //  Collide the player and the stars with the platforms
     this.physics.add.collider(player, platforms);
+    this.physics.add.collider(fermi,ascensori);
     this.physics.add.collider(stars, platforms);
     this.physics.add.collider(bombs, platforms);
     this.physics.add.collider(shields, platforms);
     this.physics.add.collider(proiettili, bombs);
+    this.physics.add.collider(ascensori, platforms, setVariabile, null, this);
+    this.physics.add.collider(player, ascensori, ascensoreFunziona, null, this);
+    this.physics.add.collider(proiettili, fermi);
+    this.physics.add.collider(proiettili, this.physics.world.bounds, collisionCallback, null, this);
+
+    
+    
 
     //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
     this.physics.add.overlap(player, stars, collectStar, null, this);
@@ -159,61 +243,127 @@ function create ()
     this.physics.add.collider(player, bombs, hitBomb, null, this);
     this.physics.add.collider(player, shields, collectLives, null, this);
 }
-
+function collisionCallback(){
+    proiettile.disableBody();
+    console.log("Il giocatore ha colpito il bordo della finestra!");
+}
 function update ()
 {
+    var time = this.time.now;
     if (gameOver)
     {
         platforms.create(400, 300, 'game');
         return;
     }
-
-    if (cursors.space.isDown){
+    if (collisione && atterrato){
+        ascensore.setVelocityY(-100);
+        this.time.delayedCall(3000, () => {
+            ascensore.setVelocityY(0);
+            atterrato = false;
+            collisione = false;
+        });
+    } else if (!atterrato){
+        ascensore.setVelocityY(100);
+        collisione = false;
+    }
+    if (ammo < 6 && rKey.isDown){
+        player.setVelocityX(0);
+        player.anims.play('reload', true);
+        this.time.delayedCall(player.anims.currentAnim.duration, () => {
+            ammo = 6;
+            ammoText.setText('Munizioni: ' + ammo);
+        });
+    }
+    else if (cursors.space.isDown && (time - ultimoSparo) > fireRate && ammo > 0){
         player.setVelocityX(0);
         player.anims.play('fire', true);
-        if (player.flipX){
-            var proiettile = proiettili.create(player.x-43, player.y+15, 'proiettile');
-            proiettile.setScale(0.5);
-            proiettile.flipX = true;
-            proiettile.setVelocityX(-1000);
+        ultimoSparo = time;
+        isFiring = true;
+        this.time.delayedCall(200, () => {
+            if (player.flipX){
+                var proiettile = proiettili.create(player.x-43, player.y+15, 'proiettile');
+                proiettile.setScale(0.5);
+                proiettile.setSize(9, 5);
+                proiettile.setOffset(31, 17);
+                proiettile.flipX = true;
+                proiettile.setVelocityX(-1000);
+            } else {
+                var proiettile = proiettili.create(player.x+43, player.y+15, 'proiettile');
+                proiettile.setScale(0.5);
+                proiettile.setSize(9, 5);
+                proiettile.setOffset(31, 17);
+                proiettile.setVelocityX(1000);
+            }
+            proiettile.body.setAllowGravity(false);
             
-        } else {
-            var proiettile = proiettili.create(player.x+43, player.y+15, 'proiettile');
-            proiettile.setScale(0.75);
-            proiettile.setVelocityX(1000);
+            proiettile.setCollideWorldBounds(true);
+            ammo--;
+            ammoText.setText('Munizioni: ' + ammo);
+        });
+        this.time.delayedCall(player.anims.currentAnim.duration, () => {
+                isFiring = false; 
+        });       
+    } else if (!isFiring){
+        if (cursors.left.isDown && !(player.body.velocity.x > 0))
+        {
+            if (shiftKey.isDown){
+                player.anims.play('run', true);
+                player.setVelocityX(-250);
+            } else {
+                player.setVelocityX(-160);
+
+                player.anims.play('left', true);    
+            }
+            player.flipX = true;
         }
-        proiettile.allowGravity = false;
-        
-        proiettile.setCollideWorldBounds(true);
-        
-    }
-    else if (cursors.left.isDown)
-    {
-        player.setVelocityX(-160);
+        else if (cursors.right.isDown)
+        {
+            if (shiftKey.isDown){
+                player.anims.play('run', true);
+                player.setVelocityX(250);
+            } else {
+                player.setVelocityX(160);
 
-        player.anims.play('left', true);
-        player.flipX = true;
-    }
-    else if (cursors.right.isDown)
-    {
-        player.setVelocityX(160);
+                player.anims.play('right', true);
+            }
+            player.flipX = false;
+        }
+        else
+        {
+            player.setVelocityX(0);
 
-        player.anims.play('right', true);
-        player.flipX = false;
-    }
-    else
-    {
-        player.setVelocityX(0);
+            player.anims.play('idle', true);
+        }
 
-        player.anims.play('idle', true);
+        if (cursors.up.isDown && player.body.touching.down)
+        {
+            player.setVelocityY(-330);
+        }
     }
 
-    if (cursors.up.isDown && player.body.touching.down)
-    {
-        player.setVelocityY(-330);
-    }
+    
 }
-
+function setVariabile(){
+    atterrato = true;
+}
+function stop(ascensore, platform){
+    ascensore.setVelocity(0);
+}
+function ascensoreFunziona(player, ascensore){
+    collisione = true;
+    /*if (atterrato){
+        ascensore.setVelocityY(-100);
+        this.time.delayedCall(1500, () => {
+            ascensore.setVelocityY(0);
+            atterrato = false;
+        });
+    } else{
+        ascensore.setVelocityY(100);
+        this.time.delayedCall(1500, () => {
+            ascensore.setVelocityY(0);
+        });
+    }*/
+}
 function collectStar (player, star)
 {
     star.disableBody(true, true);
