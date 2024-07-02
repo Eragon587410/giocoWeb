@@ -31,7 +31,8 @@ var config = {
         update: update
     }
 };
-
+var ascensoreX;
+var morte = false;
 var player;
 var stars;
 var rKey;
@@ -57,6 +58,7 @@ var atterrato = false;
 var collisione = false;
 var shiftKey;
 var ammo;
+var isReloading = false;
 
 var game = new Phaser.Game(config);
 
@@ -86,16 +88,21 @@ function create ()
     //  Here we create the ground.
     //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
     platforms.create(400, 568, 'ground').setScale(2).refreshBody();
-    platforms.create(1200, 568, 'ground').setScale(2).refreshBody();
-    ascensore = ascensori.create(400, 500, 'ground');
+    platforms.create(800, 568, 'ground').setScale(2).refreshBody();
+    platforms.create(1400, 584, 'ground');
+    ascensore = ascensori.create(1400, 500, 'ground');
     ascensore.setCollideWorldBounds(true);
     ascensore.body.setAllowGravity(false);
     fermo = fermi.create(184, 336, 'ground').setAngle(90).refreshBody();
     fermo.setSize(32, 400);
     fermo.setOffset(-32, 0);
+    fermo.disableBody(true, true);
     fermo = fermi.create(616, 336, 'ground').setAngle(90).refreshBody();
     fermo.setSize(32, 400);
     fermo.setOffset(-32, 0);
+    fermo.disableBody(true, true);
+    ascensore.setTint(0xff0000);
+    
 
     ammo = 6;
     shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
@@ -170,6 +177,11 @@ function create ()
         frameRate: 20,
         repeat: -1
     });
+    this.anims.create({
+            key: 'stay',
+            frames: [ { key: 'dude', frame: 24 } ],
+            frameRate: 10
+    });
 
     this.anims.create({
         key: 'right',
@@ -186,6 +198,12 @@ function create ()
     this.anims.create({
         key: 'reload',
         frames: this.anims.generateFrameNumbers('dude', { start: 33, end: 45 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    this.anims.create({
+        key: 'death',
+        frames: this.anims.generateFrameNumbers('dude', { start: 18, end: 24 }),
         frameRate: 10,
         repeat: -1
     });
@@ -221,7 +239,7 @@ function create ()
     livesText = this.add.text(16, 60, 'lives: '+ lives, { fontSize: '32px', fill: '#000' });
     ammoText = this.add.text(16, 104, 'Munizioni: ' + ammo, { fontSize: '32px', fill: '#000' });
 
-
+    
     //  Collide the player and the stars with the platforms
     this.physics.add.collider(player, platforms);
     this.physics.add.collider(fermi,ascensori);
@@ -235,7 +253,7 @@ function create ()
     this.physics.add.collider(proiettili, this.physics.world.bounds, collisionCallback, null, this);
 
     
-    
+    ascensoreX = ascensore.x;
 
     //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
     this.physics.add.overlap(player, stars, collectStar, null, this);
@@ -250,94 +268,114 @@ function collisionCallback(){
 function update ()
 {
     var time = this.time.now;
-    if (gameOver)
+    if (gameOver && !morte)
     {
-        platforms.create(400, 300, 'game');
-        return;
-    }
-    if (collisione && atterrato){
-        ascensore.setVelocityY(-100);
-        this.time.delayedCall(3000, () => {
-            ascensore.setVelocityY(0);
-            atterrato = false;
-            collisione = false;
-        });
-    } else if (!atterrato){
-        ascensore.setVelocityY(100);
-        collisione = false;
-    }
-    if (ammo < 6 && rKey.isDown){
-        player.setVelocityX(0);
-        player.anims.play('reload', true);
+        
+        player.anims.play('death', true);
         this.time.delayedCall(player.anims.currentAnim.duration, () => {
-            ammo = 6;
-            ammoText.setText('Munizioni: ' + ammo);
-        });
-    }
-    else if (cursors.space.isDown && (time - ultimoSparo) > fireRate && ammo > 0){
-        player.setVelocityX(0);
-        player.anims.play('fire', true);
-        ultimoSparo = time;
-        isFiring = true;
-        this.time.delayedCall(200, () => {
-            if (player.flipX){
-                var proiettile = proiettili.create(player.x-43, player.y+15, 'proiettile');
-                proiettile.setScale(0.5);
-                proiettile.setSize(9, 5);
-                proiettile.setOffset(31, 17);
-                proiettile.flipX = true;
-                proiettile.setVelocityX(-1000);
-            } else {
-                var proiettile = proiettili.create(player.x+43, player.y+15, 'proiettile');
-                proiettile.setScale(0.5);
-                proiettile.setSize(9, 5);
-                proiettile.setOffset(31, 17);
-                proiettile.setVelocityX(1000);
-            }
-            proiettile.body.setAllowGravity(false);
+            platforms.create(400, 300, 'game');
+            player.disableBody(true, true);
+            morte = true;
+            return;
             
-            proiettile.setCollideWorldBounds(true);
-            ammo--;
-            ammoText.setText('Munizioni: ' + ammo);
+            
+            
         });
-        this.time.delayedCall(player.anims.currentAnim.duration, () => {
-                isFiring = false; 
-        });       
-    } else if (!isFiring){
-        if (cursors.left.isDown && !(player.body.velocity.x > 0))
-        {
-            if (shiftKey.isDown){
-                player.anims.play('run', true);
-                player.setVelocityX(-250);
-            } else {
-                player.setVelocityX(-160);
-
-                player.anims.play('left', true);    
-            }
-            player.flipX = true;
+        
+    } else if (!gameOver){
+        if (ascensore.body.touching.left || ascensore.body.touching.right){
+            //ascensore.x = ascensoreX;
+            //ascensore.setVelocityX(0);
         }
-        else if (cursors.right.isDown)
-        {
-            if (shiftKey.isDown){
-                player.anims.play('run', true);
-                player.setVelocityX(250);
-            } else {
-                player.setVelocityX(160);
-
-                player.anims.play('right', true);
-            }
-            player.flipX = false;
+        
+        if (collisione && atterrato){
+            //ascensore.setVelocityX(0);
+            ascensore.setVelocityY(-100);
+            this.time.delayedCall(3000, () => {
+                ascensore.setVelocityY(0);
+                atterrato = false;
+                collisione = false;
+            });
+        } else if (!atterrato){
+            //ascensore.setVelocityX(0);
+            ascensore.setVelocityY(100);
+            collisione = false;
         }
-        else
-        {
+        if (ammo < 6 && rKey.isDown & player.body.touching.down){
             player.setVelocityX(0);
-
-            player.anims.play('idle', true);
+            player.anims.play('reload', true);
+            isReloading = true;
+            this.time.delayedCall(player.anims.currentAnim.duration, () => {
+                ammo = 6;
+                ammoText.setText('Munizioni: ' + ammo);
+                isReloading = false;
+            });
         }
+        else if (cursors.space.isDown && (time - ultimoSparo) > fireRate && ammo > 0 && !isReloading && player.body.touching.down){
+            player.setVelocityX(0);
+            player.anims.play('fire', true);
+            ultimoSparo = time;
+            isFiring = true;
+            this.time.delayedCall(200, () => {
+                if (player.flipX){
+                    var proiettile = proiettili.create(player.x-43, player.y+15, 'proiettile');
+                    proiettile.setScale(0.5);
+                    proiettile.setSize(9, 5);
+                    proiettile.setOffset(31, 17);
+                    proiettile.flipX = true;
+                    proiettile.setVelocityX(-1500);
+                } else {
+                    var proiettile = proiettili.create(player.x+43, player.y+15, 'proiettile');
+                    proiettile.setScale(0.5);
+                    proiettile.setSize(9, 5);
+                    proiettile.setOffset(31, 17);
+                    proiettile.setVelocityX(1500);
+                }
+                proiettile.body.setAllowGravity(false);
+                
+                proiettile.setCollideWorldBounds(true);
+                ammo--;
+                ammoText.setText('Munizioni: ' + ammo);
+            });
+            this.time.delayedCall(player.anims.currentAnim.duration, () => {
+                    isFiring = false; 
+            });       
+        } else if (!isFiring && !isReloading){
+            if (cursors.left.isDown && !(player.body.velocity.x > 0))
+            {
+                if (shiftKey.isDown){
+                    player.anims.play('run', true);
+                    player.setVelocityX(-250);
+                } else {
+                    player.setVelocityX(-160);
 
-        if (cursors.up.isDown && player.body.touching.down)
-        {
-            player.setVelocityY(-330);
+                    player.anims.play('left', true);    
+                }
+                player.flipX = true;
+            }
+            else if (cursors.right.isDown)
+            {
+                if (shiftKey.isDown){
+                    player.anims.play('run', true);
+                    player.setVelocityX(250);
+                } else {
+                    player.setVelocityX(160);
+
+                    player.anims.play('right', true);
+                }
+                player.flipX = false;
+            }
+            else
+            {
+                player.setVelocityX(0);
+
+                player.anims.play('idle', true);
+            }
+
+            if (cursors.up.isDown && player.body.touching.down)
+            {
+                player.setVelocityY(-330);
+            }
         }
     }
 
@@ -345,12 +383,21 @@ function update ()
 }
 function setVariabile(){
     atterrato = true;
+    
 }
+//function ascensoreResta(){
+ //   ascensore.x = ascensoreX;
+//}
 function stop(ascensore, platform){
     ascensore.setVelocity(0);
 }
 function ascensoreFunziona(player, ascensore){
-    collisione = true;
+    //ascensore.x = ascensoreX;
+    if (!atterrato && ascensore.body.touching.down){
+        gameOver = true;
+    } else {
+        collisione = true;
+    }
     /*if (atterrato){
         ascensore.setVelocityY(-100);
         this.time.delayedCall(1500, () => {
@@ -407,6 +454,7 @@ function collectLives (player, shield)
 
 function hitBomb (player, bomb)
 {
+    lives = lives -10;
     if (lives>1){
         lives--;
         livesText.setText('lives: ' + lives);
@@ -424,9 +472,9 @@ function hitBomb (player, bomb)
         livesText.setText('lives: ' + lives);
         this.physics.pause();
 
-        player.setTint(0xff0000);
+        //player.setTint(0xff0000);
 
-        player.anims.play('turn');
+        //player.anims.play('turn');
 
         gameOver = true;
     }
