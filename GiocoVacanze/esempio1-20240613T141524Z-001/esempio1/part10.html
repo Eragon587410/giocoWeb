@@ -185,6 +185,13 @@ function create ()
         repeat: -1
     
     });
+    this.anims.create({
+        key: 'fire_enemy',
+        frames: this.anims.generateFrameNumbers('enemy', { start: 14, end: 17 }),
+        frameRate: 10,
+        repeat: -1
+    
+    });
 
     this.anims.create({
         key: 'idle',
@@ -269,6 +276,8 @@ function create ()
     bombs = this.physics.add.group();
     shields = this.physics.add.group();
     proiettili = this.physics.add.group();
+    proiettili_enemy = this.physics.add.group();
+
 
     granata = this.physics.add.sprite(player.x+20, player.y-50, 'grenade');
     granata.setAllowGravity = true;
@@ -333,7 +342,25 @@ function update ()
         
     } else if (!gameOver){
         if (distanzaPlayerEnemy()<200 && ((player.body.x < enemy.body.x && enemy.flipX) || (player.body.x > enemy.body.x && !enemy.flipX))){
-            gameOver = true;
+            enemy.setVelocityX(0);
+            enemy.anims.play('fire_enemy', true);
+            if (enemy.flipX){
+                var proiettile_enemy = proiettili_enemy.create(enemy.x-43, enemy.y+15, 'proiettile_enemy');
+                proiettile_enemy.setScale(0.5);
+                proiettile_enemy.setSize(9, 5);
+                proiettile_enemy.setOffset(31, 17);
+                proiettile_enemy.flipX = true;
+                proiettile_enemy.setVelocityX(-1500);
+            } else {
+                var proiettile_enemy = proiettili_enemy.create(enemy.x-43, enemy.y+15, 'proiettile_enemy');
+                proiettile_enemy.setScale(0.5);
+                proiettile_enemy.setSize(9, 5);
+                proiettile_enemy.setOffset(31, 17);
+                proiettile_enemy.setVelocityX(1500);
+            }
+            proiettile_enemy.body.setAllowGravity(false);
+                        
+            proiettile_enemy.setCollideWorldBounds(true);
         } else {
             enemy.anims.play('right_enemy', true);
             if (!enemy.flipX){
