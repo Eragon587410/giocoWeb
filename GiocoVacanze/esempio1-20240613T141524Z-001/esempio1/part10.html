@@ -31,6 +31,8 @@ var config = {
         update: update
     }
 };
+var nemicoMorto = false;
+var isFiringEnemy = false;
 var ascensoreX;
 var morte = false;
 var player;
@@ -52,9 +54,11 @@ var ammoText;
 var lives = 3;
 var fireRate = 500;
 var ultimoSparo = -fireRate;
+var ultimoSparo_enemy = -fireRate;
 var isFiring = false;
 var posizione = false;
 var isGranating = false;
+var isGranatingGo = false;;
 var ascensore;
 var fermi;
 var fermo;
@@ -254,6 +258,12 @@ function create ()
         frameRate: 10,
         repeat: -1
     });
+    this.anims.create({
+        key: 'death_enemy',
+        frames: this.anims.generateFrameNumbers('enemy', { start: 18, end: 24 }),
+        frameRate: 10,
+        repeat: -1
+    });
     
 
     //  Input Events
@@ -277,7 +287,6 @@ function create ()
     shields = this.physics.add.group();
     proiettili = this.physics.add.group();
     proiettili_enemy = this.physics.add.group();
-
 
     granata = this.physics.add.sprite(player.x+20, player.y-50, 'grenade');
     granata.setAllowGravity = true;
@@ -306,6 +315,7 @@ function create ()
     this.physics.add.collider(player, ascensori, ascensoreFunziona, null, this);
     this.physics.add.collider(proiettili, fermi);
     this.physics.add.collider(proiettili, this.physics.world.bounds, collisionCallback, null, this);
+    this.physics.add.collider(proiettili, enemy, dannoNemico, null, this);
 
     
     ascensoreX = ascensore.x;
@@ -341,27 +351,36 @@ function update ()
         });
         
     } else if (!gameOver){
-        if (distanzaPlayerEnemy()<200 && ((player.body.x < enemy.body.x && enemy.flipX) || (player.body.x > enemy.body.x && !enemy.flipX))){
-            enemy.setVelocityX(0);
-            enemy.anims.play('fire_enemy', true);
-            if (enemy.flipX){
-                var proiettile_enemy = proiettili_enemy.create(enemy.x-43, enemy.y+15, 'proiettile_enemy');
-                proiettile_enemy.setScale(0.5);
-                proiettile_enemy.setSize(9, 5);
-                proiettile_enemy.setOffset(31, 17);
-                proiettile_enemy.flipX = true;
-                proiettile_enemy.setVelocityX(-1500);
-            } else {
-                var proiettile_enemy = proiettili_enemy.create(enemy.x-43, enemy.y+15, 'proiettile_enemy');
-                proiettile_enemy.setScale(0.5);
-                proiettile_enemy.setSize(9, 5);
-                proiettile_enemy.setOffset(31, 17);
-                proiettile_enemy.setVelocityX(1500);
-            }
-            proiettile_enemy.body.setAllowGravity(false);
+        if (distanzaPlayerEnemy()<200 && ((player.body.x < enemy.body.x && enemy.flipX) || (player.body.x > enemy.body.x && !enemy.flipX)) && !nemicoMorto){
+            if ((time - ultimoSparo_enemy) > fireRate && !isFiringEnemy){
+                    enemy.setVelocityX(0);
+                    isFiringEnemy = true;
+                    enemy.anims.play('fire_enemy', true);
+                    ultimoSparo_enemy = time;
+                    this.time.delayedCall(200, () => {
+                        if (enemy.flipX){
+                            var proiettile_enemy = proiettili_enemy.create(enemy.x-43, enemy.y+15, 'proiettile');
+                            proiettile_enemy.setScale(0.5);
+                            proiettile_enemy.setSize(9, 5);
+                            proiettile_enemy.setOffset(31, 17);
+                            proiettile_enemy.flipX = true;
+                            proiettile_enemy.setVelocityX(-1500);
+                        } else {
+                            var proiettile_enemy = proiettili_enemy.create(enemy.x+43, enemy.y+15, 'proiettile');
+                            proiettile_enemy.setScale(0.5);
+                            proiettile_enemy.setSize(9, 5);
+                            proiettile_enemy.setOffset(31, 17);
+                            proiettile_enemy.setVelocityX(1500);
+                        }
+                        proiettile_enemy.body.setAllowGravity(false);
                         
-            proiettile_enemy.setCollideWorldBounds(true);
-        } else {
+                        proiettile_enemy.setCollideWorldBounds(true);
+                    });
+                    this.time.delayedCall(enemy.anims.currentAnim.duration, () => {
+                            isFiringEnemy = false;
+                    });     
+            }
+        } else if (!nemicoMorto){
             enemy.anims.play('right_enemy', true);
             if (!enemy.flipX){
                 enemy.setVelocityX(100);
@@ -410,8 +429,10 @@ function update ()
                 isReloading = false;
             });
         } else if (!isReloading && !isGranating){
-            if (gKey.isDown && granate > 0){
+            if (gKey.isDown && granate > 0  && !isGranatingGo){
                 isGranating = true;
+                isGranatingGo = true;
+
                 player.setVelocityX(0);
                 player.anims.play('grenade', true);
                 
@@ -429,8 +450,9 @@ function update ()
                         
                     });
                     this.time.delayedCall(granata.anims.currentAnim.duration, () => {
-                    granata.disableBody(true, true);
-                    granata.anims.stop();
+                        granata.disableBody(true, true);
+                        granata.anims.stop();
+                        isGranatingGo = false;
                     });
                     isGranating = false;
                 });
@@ -462,6 +484,9 @@ function update ()
                         proiettile.setCollideWorldBounds(true);
                         ammo--;
                         ammoText.setText('Munizioni: ' + ammo);
+                        if (nemicoMorto){
+                            proiettile.disableBody(true, true);
+                        }
                         proiettile.body.onWorldBounds = true;
                         this.physics.world.on('worldbounds', function(body) {
                         if (body.gameObject === proiettile) {
@@ -511,7 +536,17 @@ function update ()
                 }
             }
         }
+        
     } 
+}
+function dannoNemico(proiettile){
+    nemicoMorto = true;
+    enemy.anims.play('death_enemy', true);
+    enemy.setVelocityX(0);
+    this.time.delayedCall(enemy.anims.currentAnim.duration, () => {
+        enemy.disableBody(true, true);
+        nemicoMorto = false;
+    });
 }
 function setVariabile(){
     atterrato = true;
