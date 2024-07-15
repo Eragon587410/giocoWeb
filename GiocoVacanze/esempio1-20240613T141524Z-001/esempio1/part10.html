@@ -32,6 +32,8 @@ var config = {
     }
 };
 var nemicoMorto = false;
+var numeroTotaleNemici = 1;
+var numeroNemiciRimanenti = numeroTotaleNemici;
 //var nemicoColpito = false;
 var isFiringEnemy = false;
 var proiettilePartito = false;
@@ -50,8 +52,10 @@ var proiettili;
 var ascensori;
 var platforms;
 var cursors;
+var enemies;
 var isGranatingGo = false;
 var score = 0;
+var scene;
 var gameOver = false;
 var scoreText;
 var ammoText;
@@ -93,10 +97,11 @@ function preload ()
 
 function create ()
 {
+    scene = this;
     //  A simple background for our game
     this.add.image(400, 300, 'sky');
     this.add.image(1200, 300, 'sky');
-
+    
     //  The platforms group contains the ground and the 2 ledges we can jump on
     platforms = this.physics.add.staticGroup();
     ascensori = this.physics.add.group();
@@ -107,17 +112,20 @@ function create ()
     platforms.create(400, 568, 'ground').setScale(2).refreshBody();
     //platforms.create(800, 568, 'ground').setScale(2).refreshBody();
     platforms.create(1000, 584, 'ground');
+    platforms.create(600, 284, 'ground');
+    platforms.create(200, 284, 'ground');
+
     ascensore = ascensori.create(1400, 500, 'ground');
     ascensore.setCollideWorldBounds(true);
     ascensore.body.setAllowGravity(false);
-    fermo = fermi.create(184, 336, 'ground').setAngle(90).refreshBody();
+    /*fermo = fermi.create(184, 336, 'ground').setAngle(90).refreshBody();
     fermo.setSize(32, 400);
     fermo.setOffset(-32, 0);
     fermo.disableBody(true, true);
     fermo = fermi.create(616, 336, 'ground').setAngle(90).refreshBody();
     fermo.setSize(32, 400);
     fermo.setOffset(-32, 0);
-    fermo.disableBody(true, true);
+    fermo.disableBody(true, true);*/
     ascensore.setTint(0xff0000);
     
 
@@ -164,7 +172,11 @@ function create ()
 
     // The player and its settings
     player = this.physics.add.sprite(100, 400, 'dude');
-    enemy = this.physics.add.sprite(500, 400, 'enemy');
+    enemies = this.physics.add.group();
+    enemy = this.physics.add.sprite(600, 400, 'enemy');
+    enemy2 = this.physics.add.sprite(500, 400, 'enemy');
+    enemies.add(enemy);
+    enemies.add(enemy2);
 
     //  Player physics properties. Give the little guy a slight bounce.
     player.setBounce(0);
@@ -172,10 +184,21 @@ function create ()
     player.setSize(40, 68);
     player.setOffset(40, 60);
 
+    
     enemy.setBounce(0);
     enemy.setCollideWorldBounds(true);
     enemy.setSize(40, 68);
     enemy.setOffset(40, 60);
+    enemy.ultimoSparo_enemy = -fireRate;
+    enemy2.setBounce(0);
+    enemy2.setCollideWorldBounds(true);
+    enemy2.setSize(40, 68);
+    enemy2.setOffset(40, 60);
+    enemy2.ultimoSparo_enemy = -fireRate;
+    
+    enemy.enemy_spawn = enemy.x;
+    enemy2.enemy_spawn = enemy2.x;
+    
 
     
 
@@ -323,7 +346,8 @@ function create ()
     
     //  Collide the player and the stars with the platforms
     this.physics.add.collider(player, platforms);
-    this.physics.add.collider(enemy, platforms);
+    this.physics.add.collider(enemies, ascensori);
+    this.physics.add.collider(enemies, platforms);
     this.physics.add.collider(fermi,ascensori);
     this.physics.add.collider(stars, platforms);
     this.physics.add.collider(bombs, platforms);
@@ -333,8 +357,8 @@ function create ()
     this.physics.add.collider(player, ascensori, ascensoreFunziona, null, this);
     this.physics.add.collider(proiettili, fermi);
     this.physics.add.collider(proiettili, this.physics.world.bounds, collisionCallback, null, this);
-    this.physics.add.collider(proiettili, enemy, dannoNemico, null, this);
-    this.physics.add.overlap(player, enemy, contattoNemico, null, this);
+    this.physics.add.collider(proiettili, enemies, dannoNemico, null, this);
+    this.physics.add.overlap(player, enemies, contattoNemico, null, this);
 
     
     ascensoreX = ascensore.x;
@@ -353,7 +377,7 @@ function collisionCallback(){
 }
 function update ()
 {
-    var time = this.time.now;
+    var time = scene.time.now;
     if (gameOver && !morte)
     {
         
@@ -370,70 +394,73 @@ function update ()
         });
         
     } else if (!gameOver){
-        if (proiettilePartito && !nemicoMorto){
-            enemyTriggered = true;
-        }
-        if (!nemicoMorto && (distanzaPlayerEnemy()<200 && ((player.body.x < enemy.body.x && enemy.flipX) || (player.body.x > enemy.body.x && !enemy.flipX))) || enemyTriggered){
-            enemyTriggered = true;
-            if (distanzaPlayerEnemy() > 200){
-                enemy.anims.play('run_enemy', true);
-                if (enemy.x > player.x){
-                    enemy.flipX = true;
-                    enemy.setVelocityX(-150);
-                } else {
-                    enemy.flipX = false;
-                    enemy.setVelocityX(150);
-                }
-            } else if ((time - ultimoSparo_enemy) > fireRate && !isFiringEnemy){
-                enemy.setVelocityX(0);
-                isFiringEnemy = true;
-                enemy.anims.play('fire_enemy', true);
-                ultimoSparo_enemy = time;
-                this.time.delayedCall(200, () => {
-                    if (enemy.flipX){
-                        var proiettile_enemy = proiettili_enemy.create(enemy.x-43, enemy.y+15, 'proiettile');
-                        proiettile_enemy.setScale(0.5);
-                        proiettile_enemy.setSize(9, 5);
-                        proiettile_enemy.setOffset(31, 17);
-                        proiettile_enemy.flipX = true;
-                        proiettile_enemy.setVelocityX(-1500);
-                    } else {
-                        var proiettile_enemy = proiettili_enemy.create(enemy.x+43, enemy.y+15, 'proiettile');
-                        proiettile_enemy.setScale(0.5);
-                        proiettile_enemy.setSize(9, 5);
-                        proiettile_enemy.setOffset(31, 17);
-                        proiettile_enemy.setVelocityX(1500);
-                    }
-                    proiettile_enemy.body.setAllowGravity(false);
-                    
-                    proiettile_enemy.setCollideWorldBounds(true);
-                });
-                this.time.delayedCall(enemy.anims.currentAnim.duration, () => {
-                    isFiringEnemy = false;
-                });     
+        enemies.children.iterate(function (enemy) {
+            
+            if (proiettilePartito && !enemy.nemicoMorto){
+                enemy.enemyTriggered = true;
             }
-        } else if (!nemicoMorto){
-            enemy.anims.play('right_enemy', true);
-            if (!enemy.flipX){
-                enemy.setVelocityX(100);
-                if (enemy.body.x >= 590){
-                    enemy.anims.play('idle_enemy', true);
-                    enemy.setVelocityX(0);
-                    this.time.delayedCall(1000, () => {
+            if (!enemy.nemicoMorto && (enemy.enemyTriggered || (distanzaPlayerEnemy(player, enemy)<200 && ((player.x < enemy.x && enemy.flipX) || (player.x > enemy.x && !enemy.flipX))))){
+                enemy.enemyTriggered = true;
+                if (distanzaPlayerEnemy(player, enemy) > 200){
+                    enemy.anims.play('run_enemy', true);
+                    if (enemy.x > player.x){
                         enemy.flipX = true;
-                    });
-                }
-            } else {
-                enemy.setVelocityX(-100);
-                if (enemy.x <= 300){
-                    enemy.anims.play('idle_enemy', true);
-                    enemy.setVelocityX(0);
-                    this.time.delayedCall(1000, () => {
+                        enemy.setVelocityX(-150);
+                    } else {
                         enemy.flipX = false;
+                        enemy.setVelocityX(150);
+                    }
+                } else if ((time - enemy.ultimoSparo_enemy) > fireRate && !enemy.isFiringEnemy){
+                    enemy.setVelocityX(0);
+                    enemy.isFiringEnemy = true;
+                    enemy.anims.play('fire_enemy', true);
+                    enemy.ultimoSparo_enemy = time;
+                    scene.time.delayedCall(200, () => {
+                        if (enemy.flipX){
+                            var proiettile_enemy = proiettili_enemy.create(enemy.x-43, enemy.y+15, 'proiettile');
+                            proiettile_enemy.setScale(0.5);
+                            proiettile_enemy.setSize(9, 5);
+                            proiettile_enemy.setOffset(31, 17);
+                            proiettile_enemy.flipX = true;
+                            proiettile_enemy.setVelocityX(-1500);
+                        } else {
+                            var proiettile_enemy = proiettili_enemy.create(enemy.x+43, enemy.y+15, 'proiettile');
+                            proiettile_enemy.setScale(0.5);
+                            proiettile_enemy.setSize(9, 5);
+                            proiettile_enemy.setOffset(31, 17);
+                            proiettile_enemy.setVelocityX(1500);
+                        }
+                        proiettile_enemy.body.setAllowGravity(false);
+                        
+                        proiettile_enemy.setCollideWorldBounds(true);
                     });
+                    scene.time.delayedCall(enemy.anims.currentAnim.duration, () => {
+                        enemy.isFiringEnemy = false;
+                    });     
+                }
+            } else if (!enemy.nemicoMorto){
+                enemy.anims.play('right_enemy', true);
+                if (!enemy.flipX){
+                    enemy.setVelocityX(100);
+                    if (enemy.body.x >= enemy.enemy_spawn + 200){
+                        enemy.anims.play('idle_enemy', true);
+                        enemy.setVelocityX(0);
+                        scene.time.delayedCall(1000, () => {
+                            enemy.flipX = true;
+                        });
+                    }
+                } else {
+                    enemy.setVelocityX(-100);
+                    if (enemy.x <= enemy.enemy_spawn -200){
+                        enemy.anims.play('idle_enemy', true);
+                        enemy.setVelocityX(0);
+                        scene.time.delayedCall(1000, () => {
+                            enemy.flipX = false;
+                        });
+                    }
                 }
             }
-        }
+        });
         /*if (ascensore.body.touching.left || ascensore.body.touching.right){
             //ascensore.x = ascensoreX;
             //ascensore.setVelocityX(0);
@@ -585,20 +612,19 @@ function update ()
         
     } 
 }
-function dannoNemico(proiettile){
-    enemyTriggered = false;
-    nemicoMorto = true;
-    //nemicoColpito = true;
+function dannoNemico(proiettile, enemy) {
+    enemy.enemyTriggered = false;
+    enemy.nemicoMorto = true;
     enemy.anims.play('death_enemy', true);
     enemy.setVelocityX(0);
-    proiettili.children.iterate(function (child) {
 
-        child.disableBody(true, true);
+    // Disabilita il proiettile
+    proiettile.disableBody(true, true);
 
-    });
-    this.time.delayedCall(enemy.anims.currentAnim.duration, () => {
+    // Disabilita il corpo del nemico dopo l'animazione della morte
+    scene.time.delayedCall(enemy.anims.currentAnim.duration, () => {
         enemy.disableBody(true, true);
-        //nemicoColpito = false;
+        numeroNemiciRimanenti--;
     });
 }
 function setVariabile(){
@@ -608,28 +634,30 @@ function setVariabile(){
 //function ascensoreResta(){
  //   ascensore.x = ascensoreX;
 //}
+
 function stop(ascensore, platform){
     ascensore.setVelocity(0);
 }
 
-function contattoNemico(){
-    if (isMeleeDamage){
-        if ((!player.flipX && player.x < enemy.x) || (player.flipX && player.x > enemy.x)){
-            enemyTriggered = false;
-            nemicoMorto = true;
-            //nemicoColpito = true;
+function contattoNemico(player, enemy) {
+    if (isMeleeDamage) {
+        if ((!player.flipX && player.x < enemy.x) || (player.flipX && player.x > enemy.x)) {
+            enemy.enemyTriggered = false;
+            enemy.nemicoMorto = true;
             enemy.anims.play('death_enemy', true);
             enemy.setVelocityX(0);
-            this.time.delayedCall(enemy.anims.currentAnim.duration, () => {
+
+            // Disabilita il corpo del nemico dopo l'animazione della morte
+            scene.time.delayedCall(enemy.anims.currentAnim.duration, () => {
                 enemy.disableBody(true, true);
-                //nemicoColpito = false;
             });
         }
     }
 }
 
-function distanzaPlayerEnemy(){
-    return Math.sqrt((player.body.x - enemy.body.x)**2 + (player.body.y - enemy.body.y) ** 2);
+
+function distanzaPlayerEnemy(giocatore,  nemico){
+    return Math.sqrt((giocatore.x - nemico.x)**2 + (giocatore.y - nemico.body.y) ** 2);
 }
 function ascensoreFunziona(player, ascensore){
     //ascensore.x = ascensoreX;
