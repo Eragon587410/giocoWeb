@@ -34,6 +34,7 @@ var config = {
 var nemicoMorto = false;
 //var nemicoColpito = false;
 var isFiringEnemy = false;
+var proiettilePartito = false;
 var ascensoreX;
 var isMelee = false;
 var isMeleeDamage = false;
@@ -369,6 +370,9 @@ function update ()
         });
         
     } else if (!gameOver){
+        if (proiettilePartito && !nemicoMorto){
+            enemyTriggered = true;
+        }
         if (!nemicoMorto && (distanzaPlayerEnemy()<200 && ((player.body.x < enemy.body.x && enemy.flipX) || (player.body.x > enemy.body.x && !enemy.flipX))) || enemyTriggered){
             enemyTriggered = true;
             if (distanzaPlayerEnemy() > 200){
@@ -499,12 +503,13 @@ function update ()
                 granate--;
             } else if (!isGranating){
             
-                if (cursors.space.isDown && (time - ultimoSparo) > fireRate && ammo > 0 && !isReloading && player.body.touching.down){
+                if (cursors.space.isDown && (time - ultimoSparo) > fireRate && ammo > 0 && player.body.touching.down){
                     player.setVelocityX(0);
                     player.anims.play('fire', true);
                     ultimoSparo = time;
                     isFiring = true;
                     this.time.delayedCall(200, () => {
+                        proiettilePartito = true;
                         if (player.flipX){
                             var proiettile = proiettili.create(player.x-43, player.y+15, 'proiettile');
                             proiettile.setScale(0.5);
@@ -536,6 +541,7 @@ function update ()
                         });
                         this.time.delayedCall(player.anims.currentAnim.duration, () => {
                             isFiring = false; 
+                            proiettilePartito = false;
                         });       
                 } else if (!isFiring && !isReloading && !isGranating){
                     if (cursors.left.isDown && !(player.body.velocity.x > 0))
