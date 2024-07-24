@@ -32,7 +32,8 @@ var config = {
     }
 };
 var nemicoMorto = false;
-var numeroTotaleNemici = 1;
+var livello = 1;
+var numeroTotaleNemici = 2;
 var numeroNemiciRimanenti = numeroTotaleNemici;
 //var nemicoColpito = false;
 var isFiringEnemy = false;
@@ -61,6 +62,8 @@ var scoreText;
 var ammoText;
 var lives = 3;
 var fireRate = 500;
+var porte;
+var porta;
 var ultimoSparo = -fireRate;
 var ultimoSparo_enemy = -fireRate;
 var isFiring = false;
@@ -107,17 +110,19 @@ function create ()
     ascensori = this.physics.add.group();
     fermi = this.physics.add.staticGroup();
 
+    
     //  Here we create the ground.
     //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
     platforms.create(400, 568, 'ground').setScale(2).refreshBody();
     //platforms.create(800, 568, 'ground').setScale(2).refreshBody();
     platforms.create(1000, 584, 'ground');
-    platforms.create(600, 284, 'ground');
-    platforms.create(200, 284, 'ground');
+    //platforms.create(600, 284, 'ground');
+    //platforms.create(200, 284, 'ground');
 
     ascensore = ascensori.create(1400, 500, 'ground');
     ascensore.setCollideWorldBounds(true);
     ascensore.body.setAllowGravity(false);
+    ascensore.disableBody(true, true);
     /*fermo = fermi.create(184, 336, 'ground').setAngle(90).refreshBody();
     fermo.setSize(32, 400);
     fermo.setOffset(-32, 0);
@@ -128,6 +133,11 @@ function create ()
     fermo.disableBody(true, true);*/
     ascensore.setTint(0xff0000);
     
+    porte = this.physics.add.staticGroup();
+    porta = porte.create(1192, 468, 'ground').setScale(0.5).setAngle(90).refreshBody();
+    porta.setTint(0xff0000);
+    porta.setSize(16, 200);
+    porta.setOffset(-16, 0);
 
     ammo = 6;
     shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
@@ -173,10 +183,14 @@ function create ()
     // The player and its settings
     player = this.physics.add.sprite(100, 400, 'dude');
     enemies = this.physics.add.group();
-    enemy = this.physics.add.sprite(600, 400, 'enemy');
-    enemy2 = this.physics.add.sprite(500, 400, 'enemy');
-    enemies.add(enemy);
-    enemies.add(enemy2);
+    createEnemy(600, 400);
+    createEnemy(500, 400);
+
+
+
+    
+    //enemies.add(enemy);
+    //enemies.add(enemy2);
 
     //  Player physics properties. Give the little guy a slight bounce.
     player.setBounce(0);
@@ -184,20 +198,7 @@ function create ()
     player.setSize(40, 68);
     player.setOffset(40, 60);
 
-    
-    enemy.setBounce(0);
-    enemy.setCollideWorldBounds(true);
-    enemy.setSize(40, 68);
-    enemy.setOffset(40, 60);
-    enemy.ultimoSparo_enemy = -fireRate;
-    enemy2.setBounce(0);
-    enemy2.setCollideWorldBounds(true);
-    enemy2.setSize(40, 68);
-    enemy2.setOffset(40, 60);
-    enemy2.ultimoSparo_enemy = -fireRate;
-    
-    enemy.enemy_spawn = enemy.x;
-    enemy2.enemy_spawn = enemy2.x;
+    variabiliNemici();
     
 
     
@@ -339,9 +340,11 @@ function create ()
     var shield = shields.create(x, 16, 'shield');
     
     //  The score
-    scoreText = this.add.text(19, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
-    livesText = this.add.text(16, 60, 'lives: '+ lives, { fontSize: '32px', fill: '#000' });
-    ammoText = this.add.text(16, 104, 'Munizioni: ' + ammo, { fontSize: '32px', fill: '#000' });
+    //scoreText = this.add.text(19, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
+    livesText = this.add.text(16, 16, 'Lives: '+ lives, { fontSize: '32px', fill: '#000' });
+    ammoText = this.add.text(16, 60, 'Munizioni: ' + ammo, { fontSize: '32px', fill: '#000' });
+    levelText = this.add.text(16, 104, 'Livello: ' + livello, { fontSize: '32px', fill: '#000' });
+
 
     
     //  Collide the player and the stars with the platforms
@@ -359,6 +362,7 @@ function create ()
     this.physics.add.collider(proiettili, this.physics.world.bounds, collisionCallback, null, this);
     this.physics.add.collider(proiettili, enemies, dannoNemico, null, this);
     this.physics.add.overlap(player, enemies, contattoNemico, null, this);
+    this.physics.add.collider(player, porte, contattoPorta, null, this);
 
     
     ascensoreX = ascensore.x;
@@ -612,20 +616,33 @@ function update ()
         
     } 
 }
-function dannoNemico(proiettile, enemy) {
-    enemy.enemyTriggered = false;
-    enemy.nemicoMorto = true;
-    enemy.anims.play('death_enemy', true);
-    enemy.setVelocityX(0);
 
-    // Disabilita il proiettile
-    proiettile.disableBody(true, true);
-
-    // Disabilita il corpo del nemico dopo l'animazione della morte
-    scene.time.delayedCall(enemy.anims.currentAnim.duration, () => {
-        enemy.disableBody(true, true);
-        numeroNemiciRimanenti--;
+function variabiliNemici(){
+    enemies.children.iterate(function (enemy) {
+        enemy.setBounce(0);
+        enemy.setCollideWorldBounds(true);
+        enemy.setSize(40, 68);
+        enemy.setOffset(40, 60);
+        enemy.ultimoSparo_enemy = -fireRate;
+        enemy.enemy_spawn = enemy.x;
     });
+}
+function dannoNemico(proiettile, enemy) {
+    if (!enemy.nemicoMorto){
+        enemy.enemyTriggered = false;
+        enemy.nemicoMorto = true;
+        enemy.anims.play('death_enemy', true);
+        enemy.setVelocityX(0);
+
+        // Disabilita il proiettile
+        proiettile.disableBody(true, true);
+
+        // Disabilita il corpo del nemico dopo l'animazione della morte
+        scene.time.delayedCall(enemy.anims.currentAnim.duration, () => {
+            enemy.disableBody(true, true);
+            numeroNemiciRimanenti--;
+        });
+    }
 }
 function setVariabile(){
     atterrato = true;
@@ -638,9 +655,48 @@ function setVariabile(){
 function stop(ascensore, platform){
     ascensore.setVelocity(0);
 }
+function contattoPorta(){
+    if (numeroNemiciRimanenti == 0){
+        //livello++;
+        //numeroTotaleNemici = livello * 2;
+        //numeroNemiciRimanenti = numeroTotaleNemici;
+        levelUp();
+        
+    }
+}
+function level2(){
+    console.log(ciao);
+}
 
+function createEnemy(x, y){
+    enemy = scene.physics.add.sprite(x, y, 'enemy');
+    enemies.add(enemy);
+}
+function levelUp(){
+    livello++;
+    numeroTotaleNemici = livello * 2;
+    numeroNemiciRimanenti = numeroTotaleNemici;
+    //player.disableBody(true, true);
+    //player = this.physics.add.sprite(100, 400, 'dude');
+    player.enableBody(true, 100, 400, true, true);
+    if (livello == 2){
+        platforms.create(600, 284, 'ground');
+        platforms.create(200, 284, 'ground');
+        ascensore.enableBody(true, 1400, 500, true, true);
+        porta.disableBody(true, true);
+        porta = porte.create(8, 200, 'ground').setScale(0.5).setAngle(90).refreshBody();
+        porta.setTint(0xff0000);
+        porta.setSize(16, 200);
+        porta.setOffset(-16, 0);
+        createEnemy(600, 400);
+        createEnemy(500, 400);
+        createEnemy(400, 200);
+        createEnemy(300, 200);
+        variabiliNemici();
+    }
+}
 function contattoNemico(player, enemy) {
-    if (isMeleeDamage) {
+    if (isMeleeDamage && !enemy.nemicoMorto) {
         if ((!player.flipX && player.x < enemy.x) || (player.flipX && player.x > enemy.x)) {
             enemy.enemyTriggered = false;
             enemy.nemicoMorto = true;
@@ -650,6 +706,7 @@ function contattoNemico(player, enemy) {
             // Disabilita il corpo del nemico dopo l'animazione della morte
             scene.time.delayedCall(enemy.anims.currentAnim.duration, () => {
                 enemy.disableBody(true, true);
+                numeroNemiciRimanenti--;
             });
         }
     }
@@ -686,7 +743,7 @@ function collectStar (player, star)
 
     //  Add and update the score
     score += 10;
-    scoreText.setText('Score: ' + score);
+    //scoreText.setText('Score: ' + score);
 
     if (stars.countActive(true) === 0)
     {
