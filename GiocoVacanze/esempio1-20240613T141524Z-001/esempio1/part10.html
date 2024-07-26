@@ -32,6 +32,8 @@ var config = {
     }
 };
 var nemicoMorto = false;
+var portataMinima = 200;
+var portataMassima = 350;
 var livello = 1;
 var numeroTotaleNemici = 2;
 var numeroNemiciRimanenti = numeroTotaleNemici;
@@ -405,7 +407,7 @@ function update ()
             }
             if (!enemy.nemicoMorto && (enemy.enemyTriggered || (distanzaPlayerEnemy(player, enemy)<200 && ((player.x < enemy.x && enemy.flipX) || (player.x > enemy.x && !enemy.flipX))))){
                 enemy.enemyTriggered = true;
-                if (distanzaPlayerEnemy(player, enemy) > 200){
+                if (distanzaPlayerEnemy(player, enemy) > enemy.portata){
                     enemy.anims.play('run_enemy', true);
                     if (enemy.x > player.x){
                         enemy.flipX = true;
@@ -625,6 +627,8 @@ function variabiliNemici(){
         enemy.setOffset(40, 60);
         enemy.ultimoSparo_enemy = -fireRate;
         enemy.enemy_spawn = enemy.x;
+        enemy.range = Math.range
+        enemy.portata = Math.random() * (portataMassima - portataMinima) + portataMinima;
     });
 }
 function dannoNemico(proiettile, enemy) {
@@ -715,6 +719,12 @@ function contattoNemico(player, enemy) {
 
 function distanzaPlayerEnemy(giocatore,  nemico){
     return Math.sqrt((giocatore.x - nemico.x)**2 + (giocatore.y - nemico.body.y) ** 2);
+}
+function distanzaPlayerEnemyX(giocatore,  nemico){
+    return Math.abs(giocatore.x - nemico.x);
+}
+function distanzaPlayerEnemyY(giocatore,  nemico){
+    return Math.abs(giocatore.y - nemico.y);
 }
 function ascensoreFunziona(player, ascensore){
     //ascensore.x = ascensoreX;
