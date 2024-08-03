@@ -31,6 +31,7 @@ var config = {
         update: update
     }
 };
+var tocca;
 var nemicoMorto = false;
 var portataMinima = 200;
 var portataMassima = 350;
@@ -361,7 +362,7 @@ function create ()
     ammoText = this.add.text(16, 60, 'Munizioni: ' + ammo, { fontSize: '32px', fill: '#000' });
     levelText = this.add.text(16, 104, 'Livello: ' + livello, { fontSize: '32px', fill: '#000' });
 
-
+    this.physics.world.setBoundsCollision(true, true, true, true);
     
     //  Collide the player and the stars with the platforms
     this.physics.add.collider(player, platforms);
@@ -375,7 +376,8 @@ function create ()
     this.physics.add.collider(ascensori, platforms, setVariabile, null, this);
     this.physics.add.overlap(player, ascensori, ascensoreFunziona, null, this);
     this.physics.add.collider(proiettili, fermi);
-    this.physics.add.collider(proiettili, this.physics.world.bounds, collisionCallback, null, this);
+    //this.physics.add.collider(proiettili, this.physics.world.bounds, collisionCallback, null, this);
+    //this.physics.add.collider(proiettili_enemy, this.physics.world.bounds, collisionCallbackEnemy, null, this);
     this.physics.add.overlap(proiettili, enemies, dannoNemico, null, this);
     this.physics.add.overlap(player, enemies, contattoNemico, null, this);
     this.physics.add.collider(player, porte, contattoPorta, null, this);
@@ -391,9 +393,13 @@ function create ()
 
     
 }
-function collisionCallback(){
-    proiettile.disableBody();
-    console.log("Il giocatore ha colpito il bordo della finestra!");
+function collisionCallback(proiettile){
+    //proiettile.disableBody();
+    //console.log("Il giocatore ha colpito il bordo della finestra!");
+}
+function collisionCallbackEnemy(proiettile_enemy){
+    proiettile_enemy.disableBody();
+    //console.log("Il giocatore ha colpito il bordo della finestra!");
 }
 function update ()
 {
@@ -421,7 +427,7 @@ function update ()
                 }
                 if ((enemy.enemyTriggered || (distanzaPlayerEnemyY(player, enemy)<20 && distanzaPlayerEnemyX(player, enemy)<200 && ((player.x < enemy.x && enemy.flipX) || (player.x > enemy.x && !enemy.flipX))))){
                     enemy.enemyTriggered = true;
-                    if (distanzaPlayerEnemy(player, enemy) > enemy.portata){
+                    if (!enemy.isFiringEnemy && (distanzaPlayerEnemy(player, enemy) > enemy.portata || ((enemy.x > player.x && !enemy.flipX) || (enemy.x < player.x && enemy.flipX)))){
                         enemy.anims.play('run_enemy', true);
                         if (enemy.x > player.x){
                             enemy.flipX = true;
@@ -437,7 +443,7 @@ function update ()
                         enemy.ultimoSparo_enemy = time;
                         scene.time.delayedCall(200, () => {
                             if (enemy.flipX){
-                                var proiettile_enemy = proiettili_enemy.create(enemy.x-43, enemy.y+15, 'proiettile');
+                                proiettile_enemy = proiettili_enemy.create(enemy.x-43, enemy.y+15, 'proiettile');
                                 proiettile_enemy.setScale(0.5);
                                 proiettile_enemy.setSize(9, 5);
                                 proiettile_enemy.setOffset(31, 17);
@@ -453,10 +459,20 @@ function update ()
                             proiettile_enemy.body.setAllowGravity(false);
                             
                             proiettile_enemy.setCollideWorldBounds(true);
+                            proiettile_enemy.body.onWorldBounds = true;
+                            scene.physics.world.on('worldbounds', function(body) {
+                                if (body.gameObject === proiettile_enemy) {
+                                    proiettile_enemy.destroy();
+                                }
+                            }, this);
+                            
                         });
                         scene.time.delayedCall(enemy.anims.currentAnim.duration, () => {
                             enemy.isFiringEnemy = false;
                         });     
+                    } else if (!enemy.isFiringEnemy){
+                        enemy.setVelocityX(0);
+                        enemy.anims.play('idle_enemy', true);
                     }
                 } else {
                     enemy.anims.play('right_enemy', true);
@@ -486,6 +502,7 @@ function update ()
             //ascensore.x = ascensoreX;
             //ascensore.setVelocityX(0);
         }*/
+        
         if (collisione && !ascensore.body.touching.up){
             collisione = false;
         }
@@ -508,6 +525,10 @@ function update ()
                 player.y = ascensore.y -80;
                 player.setVelocityY(ascensore.body.velocity.y);
                 //player.setVelocityY(0);
+            } else if (ascensore.contatto && ascensore.body.touching.up){
+                player.y = ascensore.y -80;
+            } else {
+                ascensore.contatto = false;
             }
             
             
@@ -595,12 +616,13 @@ function update ()
                             proiettile.disableBody(true, true);
                         }*/
                         proiettile.body.onWorldBounds = true;
+                        
                         this.physics.world.on('worldbounds', function(body) {
-                        if (body.gameObject === proiettile) {
-                            proiettile.disableBody(true, true);
-                        }
+                            if (body.gameObject === proiettile) {
+                                proiettile.destroy();
+                            }
                         }, this);
-                        });
+                    });
                         this.time.delayedCall(player.anims.currentAnim.duration, () => {
                             isFiring = false; 
                             proiettilePartito = false;
@@ -683,7 +705,8 @@ function dannoNemico(proiettile, enemy) {
 
             // Disabilita il corpo del nemico dopo l'animazione della morte
             scene.time.delayedCall(enemy.anims.currentAnim.duration, () => {
-                enemy.disableBody(true, true);
+                //enemy.disableBody(true, true);
+                enemy.destroy();
                 numeroNemiciRimanenti--;
             });
         }
@@ -755,7 +778,8 @@ function contattoNemico(player, enemy) {
 
             // Disabilita il corpo del nemico dopo l'animazione della morte
             scene.time.delayedCall(enemy.anims.currentAnim.duration, () => {
-                enemy.disableBody(true, true);
+                //enemy.disableBody(true, true);
+                enemy.destroy();
                 numeroNemiciRimanenti--;
             });
         }
@@ -774,17 +798,26 @@ function distanzaPlayerEnemyY(giocatore,  nemico){
 }
 function ascensoreFunziona(player, ascensore){
     //ascensore.x = ascensoreX;
+    var prova;
     if (!atterrato && ascensore.body.touching.down){
         gameOver = true;
     } else {
         var enPresenti = false;
         enemies.children.iterate(function (enemy) {
-            if (distanzaPlayerEnemyY(ascensore, enemy)<20){
+            if (distanzaPlayerEnemyY(ascensore, enemy)<100){
                 enPresenti = true;
             }
         });
         if (!enPresenti){
+            ascensore.contatto = false;
             collisione = true;
+            if (prova != null){
+                //scene.physics.world.removeCollider(prova);
+            }
+        } else {
+            //prova = scene.physics.add.collider(player, ascensori, ascensoreFunziona);
+            //ascensore.contatto = true;
+            player.y = ascensore.y - 80;
         }
     }
     /*if (atterrato){
