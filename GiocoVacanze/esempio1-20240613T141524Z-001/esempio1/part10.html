@@ -619,7 +619,7 @@ function update ()
                         
                         this.physics.world.on('worldbounds', function(body) {
                             if (body.gameObject === proiettile) {
-                                proiettile.destroy();
+                                proiettile.destroy(z);
                             }
                         }, this);
                     });
