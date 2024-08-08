@@ -379,6 +379,7 @@ function create ()
     //this.physics.add.collider(proiettili, this.physics.world.bounds, collisionCallback, null, this);
     //this.physics.add.collider(proiettili_enemy, this.physics.world.bounds, collisionCallbackEnemy, null, this);
     this.physics.add.overlap(proiettili, enemies, dannoNemico, null, this);
+    this.physics.add.overlap(proiettili_enemy, player, dannoPlayer, null, this);
     this.physics.add.overlap(player, enemies, contattoNemico, null, this);
     this.physics.add.collider(player, porte, contattoPorta, null, this);
 
@@ -404,22 +405,9 @@ function collisionCallbackEnemy(proiettile_enemy){
 function update ()
 {
     var time = scene.time.now;
-    if (gameOver && !morte)
-    {
+ 
         
-        player.anims.play('death', true);
-        player.setVelocityX(0);
-        this.time.delayedCall(player.anims.currentAnim.duration, () => {
-            platforms.create(400, 300, 'game');
-            player.disableBody(true, true);
-            morte = true;
-            return;
-            
-            
-            
-        });
-        
-    } else if (!gameOver){
+    if (!gameOver){
         enemies.children.iterate(function (enemy) {
             if (!enemy.nemicoMorto && !enemy.nemicoColpito){
                 if (proiettilePartito && distanzaPlayerEnemyY(player, enemy)<20){
@@ -436,37 +424,40 @@ function update ()
                             enemy.flipX = false;
                             enemy.setVelocityX(150);
                         }
-                    } else if ((time - enemy.ultimoSparo_enemy) > fireRate && !enemy.isFiringEnemy){
+                    } else if ((time - enemy.ultimoSparo_enemy) > fireRate && !enemy.isFiringEnemy && !enemy.nemicoColpito){
                         enemy.setVelocityX(0);
                         enemy.isFiringEnemy = true;
                         enemy.anims.play('fire_enemy', true);
                         enemy.ultimoSparo_enemy = time;
-                        scene.time.delayedCall(200, () => {
-                            if (enemy.flipX){
-                                proiettile_enemy = proiettili_enemy.create(enemy.x-43, enemy.y+15, 'proiettile');
-                                proiettile_enemy.setScale(0.5);
-                                proiettile_enemy.setSize(9, 5);
-                                proiettile_enemy.setOffset(31, 17);
-                                proiettile_enemy.flipX = true;
-                                proiettile_enemy.setVelocityX(-1500);
-                            } else {
-                                var proiettile_enemy = proiettili_enemy.create(enemy.x+43, enemy.y+15, 'proiettile');
-                                proiettile_enemy.setScale(0.5);
-                                proiettile_enemy.setSize(9, 5);
-                                proiettile_enemy.setOffset(31, 17);
-                                proiettile_enemy.setVelocityX(1500);
-                            }
-                            proiettile_enemy.body.setAllowGravity(false);
-                            
-                            proiettile_enemy.setCollideWorldBounds(true);
-                            proiettile_enemy.body.onWorldBounds = true;
-                            scene.physics.world.on('worldbounds', function(body) {
-                                if (body.gameObject === proiettile_enemy) {
-                                    proiettile_enemy.destroy();
-                                }
-                            }, this);
-                            
-                        });
+                        if (!enemy.nemicoColpito && !enemy.nemicoMorto){
+                            scene.time.delayedCall(200, () => {
+                                if (!enemy.nemicoColpito && !enemy.nemicoMorto){
+                                    if (enemy.flipX){
+                                        proiettile_enemy = proiettili_enemy.create(enemy.x-43, enemy.y+15, 'proiettile');
+                                        proiettile_enemy.setScale(0.5);
+                                        proiettile_enemy.setSize(9, 5);
+                                        proiettile_enemy.setOffset(31, 17);
+                                        proiettile_enemy.flipX = true;
+                                        proiettile_enemy.setVelocityX(-1500);
+                                    } else {
+                                        var proiettile_enemy = proiettili_enemy.create(enemy.x+43, enemy.y+15, 'proiettile');
+                                        proiettile_enemy.setScale(0.5);
+                                        proiettile_enemy.setSize(9, 5);
+                                        proiettile_enemy.setOffset(31, 17);
+                                        proiettile_enemy.setVelocityX(1500);
+                                    }
+                                    proiettile_enemy.body.setAllowGravity(false);
+                                    
+                                    proiettile_enemy.setCollideWorldBounds(true);
+                                    proiettile_enemy.body.onWorldBounds = true;
+                                    scene.physics.world.on('worldbounds', function(body) {
+                                        if (body.gameObject === proiettile_enemy) {
+                                            proiettile_enemy.destroy();
+                                        }
+                                    }, this);
+                                }  
+                            });
+                        }
                         scene.time.delayedCall(enemy.anims.currentAnim.duration, () => {
                             enemy.isFiringEnemy = false;
                         });     
@@ -619,7 +610,7 @@ function update ()
                         
                         this.physics.world.on('worldbounds', function(body) {
                             if (body.gameObject === proiettile) {
-                                proiettile.destroy(z);
+                                proiettile.destroy();
                             }
                         }, this);
                     });
@@ -683,10 +674,32 @@ function variabiliNemici(){
         enemy.vita = 3;
     });
 }
+function dannoPlayer(proiettile, player){
+    if (lives > 1){
+        //proiettile.destroy();
+        lives--;
+        livesText.setText('Lives: ' + lives);
+    } else {
+        playerDead();
+    }
+}
+function playerDead(){
+    gameOver = true;
+    player.anims.play('death', true);
+    player.setVelocityX(0);
+    scene.time.delayedCall(player.anims.currentAnim.duration, () => {
+        platforms.create(400, 300, 'game');
+        player.destroy();
+        morte = true;
+        scene.physics.pause();
+        return;
+    });     
+}
 function dannoNemico(proiettile, enemy) {
     if (!enemy.nemicoMorto){
         if (enemy.vita > 1){
             enemy.nemicoColpito = true;
+            enemy.fermaProiettile = true;
             enemy.vita--;
             enemy.setVelocityX(0);
             proiettile.disableBody(true, true);
@@ -697,6 +710,7 @@ function dannoNemico(proiettile, enemy) {
         } else {
             enemy.enemyTriggered = false;
             enemy.nemicoMorto = true;
+            enemy.nemicoColpito = true;
             enemy.anims.play('death_enemy', true);
             enemy.setVelocityX(0);
 
@@ -800,7 +814,7 @@ function ascensoreFunziona(player, ascensore){
     //ascensore.x = ascensoreX;
     var prova;
     if (!atterrato && ascensore.body.touching.down){
-        gameOver = true;
+        playerDead();
     } else {
         var enPresenti = false;
         enemies.children.iterate(function (enemy) {
