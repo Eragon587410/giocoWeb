@@ -1,0 +1,120 @@
+var MenuScene = function(game) {
+    this.game = game;
+    this.menuItems = [];
+    this.selectedIndex = 0; // Indice dell'opzione selezionata
+};
+
+MenuScene.prototype.create = function() {
+    // Aggiungi il testo del menu e rendili interattivi
+    this.menuItems = [
+        this.game.add.text(400, 300, 'Start Game', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5, 0.5).setInteractive(),
+        this.game.add.text(400, 350, 'Options', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5, 0.5).setInteractive(),
+        this.game.add.text(400, 400, 'Exit', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5, 0.5).setInteractive()
+    ];
+
+    // Crea un oggetto grafico per il contorno
+    this.highlightBox = this.game.add.graphics();
+    this.updateSelection();
+
+    // Aggiungi i listener per i tasti freccia e invio
+    this.game.input.keyboard.on('keydown-UP', this.moveSelectionUp, this);
+    this.game.input.keyboard.on('keydown-DOWN', this.moveSelectionDown, this);
+    this.game.input.keyboard.on('keydown-ENTER', this.selectOption, this);
+
+    // Aggiungi i listener per il mouse
+    var self = this; // Utilizzare una variabile di riferimento per la funzione callback
+    this.menuItems.forEach(function(item, index) {
+        item.on('pointerover', function() {
+            self.selectedIndex = index;
+            self.updateSelection();
+        });
+
+        item.on('pointerout', function() {
+            self.updateSelection();
+        });
+
+        item.on('pointerdown', function() {
+            self.selectOption();
+        });
+    });
+};
+
+MenuScene.prototype.updateSelection = function() {
+    if (this.menuItems.length === 0) return; // Verifica se ci sono elementi nel menu
+
+    // Reset del colore del testo e rimuove il contorno
+    this.menuItems.forEach(function(item) {
+        item.setStyle({ fill: '#fff' }); // Colore normale
+    });
+
+    // Modifica il testo selezionato per renderlo più luminoso
+    this.menuItems[this.selectedIndex].setStyle({ fill: '#ff0' }); // Colore luminoso (giallo)
+
+    // Disegna la casella di contorno intorno all'opzione selezionata
+    this.highlightBox.clear();
+    this.highlightBox.lineStyle(2, 0xffffff); // Colore del contorno bianco
+    this.highlightBox.strokeRect(
+        this.menuItems[this.selectedIndex].x - this.menuItems[this.selectedIndex].width / 2 - 10,
+        this.menuItems[this.selectedIndex].y - this.menuItems[this.selectedIndex].height / 2 - 5,
+        this.menuItems[this.selectedIndex].width + 20,
+        this.menuItems[this.selectedIndex].height + 10
+    );
+};
+
+MenuScene.prototype.moveSelectionUp = function() {
+    this.selectedIndex--;
+    if (this.selectedIndex < 0) {
+        this.selectedIndex = this.menuItems.length - 1;
+    }
+    this.updateSelection();
+};
+
+MenuScene.prototype.moveSelectionDown = function() {
+    this.selectedIndex++;
+    if (this.selectedIndex >= this.menuItems.length) {
+        this.selectedIndex = 0;
+    }
+    this.updateSelection();
+};
+
+MenuScene.prototype.selectOption = function() {
+    switch(this.selectedIndex) {
+        case 0:
+            this.game.scene.start('GameScene');
+            break;
+        case 1:
+            console.log('Options selected');
+            break;
+        case 2:
+            console.log('Exit selected');
+            break;
+    }
+};
+
+// Configurazione del gioco Phaser
+var config = {
+    type: Phaser.AUTO,
+    width: 800,
+    height: 600,
+    scene: {
+        preload: preload,
+        create: create,
+        update: update
+    }
+};
+
+var game = new Phaser.Game(config);
+
+function preload() {
+    // Carica risorse se necessario
+}
+
+function create() {
+    // Creare la scena del menu
+    this.menuScene = new MenuScene(this);
+    this.menuScene.create();
+}
+
+function update() {
+    // Aggiorna la scena se necessario
+}
