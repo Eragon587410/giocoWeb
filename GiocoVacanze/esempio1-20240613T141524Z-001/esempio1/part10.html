@@ -128,6 +128,7 @@ function createMenu(){
     optionButton.alpha = 0.7;
     menuIniziale.add(startButton);
     menuIniziale.add(optionButton);
+
     /*this.tweens.add({
         targets: startButton,
         alpha: { from: 1, to: 0.5 }, // Da completamente visibile a metà visibile
@@ -144,7 +145,7 @@ function createMenu(){
                 targets: child,
                 alpha: { from: 0.7, to: 1 }, // Da completamente visibile a metà visibile
                 scale: 1.2,
-                duration: 400,
+                duration: 300,
                 yoyo: false,
                 repeat: 0
             });
@@ -154,7 +155,7 @@ function createMenu(){
                 targets: child,
                 alpha: { from: 1, to: 0.7 }, // Da completamente visibile a metà visibile
                 scale: 1,
-                duration: 400,
+                duration: 300,
                 yoyo: false,
                 repeat: 0
             });
@@ -168,12 +169,12 @@ function createMenu(){
                 targets: startButton,
          // Da completamente visibile a metà visibile
                 scale: 1,
-                duration: 200,
+                duration: 150,
                 yoyo: true,
                 repeat: 0,
                 onComplete: () => {
                 // Passa alla scena del menu
-                scene.scene.start('level1');
+                game.scene.start('level1');
                 }
             });
 
@@ -183,12 +184,12 @@ function createMenu(){
             scene.tweens.add({
                 targets: optionButton,
                 scale: 1,
-                duration: 200,
+                duration: 150,
                 yoyo: true,
                 repeat: 0,
                 onComplete: () => {
-                    startButton.destroy();
-                    optionButton.destroy();
+                    startButton.visible = false;
+                    optionButton.visible = false;
                     var optionTitle = scene.add.text(600, 350, 'OPZIONI', { fontSize: '50px', fontStyle: 'bold', fill: '#fff' }).setOrigin(0.5, 0.5).setScale(1.2);
                     scene.tweens.add({
                         targets: optionTitle, // Da completamente visibile a metà visibile
@@ -204,17 +205,29 @@ function createMenu(){
                             targets: returnButton,
                             alpha: { from: 0.7, to: 1 }, // Da completamente visibile a metà visibile
                             scale: 1.2,
-                            duration: 400,
+                            duration: 300,
                             yoyo: false,
                             repeat: 0
                         });  
+                    });
+                    returnButton.on('pointerout', function() {
+                        scene.tweens.add({
+                            targets: returnButton,
+                            alpha: { from: 1, to: 0.7 }, // Da completamente visibile a metà visibile
+                            scale: 1,
+                            duration: 300,
+                            yoyo: false,
+                            repeat: 0
+                        });
+                    
                     }); 
+                    
                     returnButton.on('pointerdown', function() {
                         console.log("ciao");
                         scene.tweens.add({
                             targets: returnButton, // Da completamente visibile a metà visibile
                             scale: 1,
-                            duration: 200,
+                            duration: 150,
                             yoyo: true,
                             repeat: 0,
                             onComplete: () => {
@@ -223,9 +236,30 @@ function createMenu(){
                                     alpha: { from: 1, to: 0 }, // Da completamente visibile a metà visibile
                                     duration: 200,
                                     yoyo: false,
-                                    repeat: 0
+                                    repeat: 0,
+                                    onComplete: () => {
+                                        scene.tweens.add({
+                                            targets: optionTitle,
+                                            alpha: { from: 1, to: 0.7 }, // Da completamente visibile a metà visibile
+                                            scale: 1,
+                                            y: 350,
+                                            duration: 200,
+                                            yoyo: false,
+                                            repeat: 0,
+                                            onComplete: () => {
+                                                optionTitle.destroy();
+                                                optionButton.visible = true;
+                                                startButton.visible = true;
+                                            }
+                                        });  
+                                        returnButton.visible = false;  
+                                    }
                                     
                                 });  
+                                
+                                
+                                
+                                
                             }
                         });  
                         
@@ -236,8 +270,8 @@ function createMenu(){
         });
             //menuIniziale.add(audioButton);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
 
-
 }
+
 
 function updateMenu(){
 }
@@ -259,6 +293,7 @@ var config = {
         }
     },
 };
+var barra;
 var tocca;
 var audio;
 var nemicoMorto = false;
@@ -276,6 +311,7 @@ var isMeleeDamage = false;
 var morte = false;
 var player;
 var stars;
+var barraAmmo;
 var rKey;
 var bombs;
 var granate = 12;
@@ -319,20 +355,26 @@ var game = new Phaser.Game(config);
 game.scene.add("Menu", Menu);
 game.scene.add("level1", Level1scene);
 game.scene.add("Logo", Logo);
-game.scene.start("Logo");
+game.scene.start("Menu");
 
 function preload ()
 {
     this.load.spritesheet('medKit', 'assets/medkit.png', {frameWidth: 256, frameHeight: 256});
     this.load.spritesheet('drone', 'assets/drone.png', {frameWidth: 480, frameHeight: 480});
+    this.load.spritesheet('ammoBar', 'assets/barraAmmo.png', {frameWidth: 40, frameHeight: 27});
     this.load.image('sky', 'assets/sky.png');
     this.load.spritesheet('grenade', 'assets/explosion.png', {frameWidth: 128, frameHeight: 128});
-    this.load.image('game', 'assets/game.png');
     this.load.image('ground', 'assets/platform.png');
+    this.load.image('terreno', 'assets/terra.png');
+    this.load.spritesheet('barra', 'assets/barra.png', {frameWidth: 1600, frameHeight: 550});
     this.load.image('star', 'assets/star.png');
     this.load.image('bomb', 'assets/bomb.png');
-    this.load.image('shield', 'assets/live.png');
     this.load.image('proiettile', 'assets/proiettile.png');
+    this.load.image('nuvoleGrandi', 'assets/nuvoleGrandi.png');
+    this.load.image('nuvolePiccole', 'assets/nuvolePiccole.png');
+    this.load.image('barra_morte', 'assets/barra4.png');
+    this.load.image('barraSfondo', 'assets/barraSfondo.png');
+    this.load.image('teschio', 'assets/teschio.png');
     this.load.spritesheet('dude', 'assets/cazzone.png', { frameWidth: 128, frameHeight: 128 });
     this.load.spritesheet('enemy', 'assets/cazzone.png', { frameWidth: 128, frameHeight: 128 });
 }
@@ -341,19 +383,27 @@ function create ()
 {
     scene = this;
     //  A simple background for our game
-    this.add.image(400, 300, 'sky');
-    this.add.image(1200, 300, 'sky');
-    
+    //this.add.image(400, 300, 'sky');
+    //this.add.image(1200, 300, 'sky');
+    this.cameras.main.setBackgroundColor('0x00BFFF');
     //  The platforms group contains the ground and the 2 ledges we can jump on
     platforms = this.physics.add.staticGroup();
     ascensori = this.physics.add.group();
     fermi = this.physics.add.staticGroup();
-
+    var nuvole = this.physics.add.staticGroup();
+    nuvole.create(400, 200, 'nuvoleGrandi');
+    nuvole.create(600, 150, 'nuvolePiccole');
+    nuvole.create(900, 250, 'nuvoleGrandi');
+    nuvole.create(700, 120, 'nuvolePiccole');
+    nuvole.create(200, 120, 'nuvolePiccole');
+    nuvole.create(160, 300, 'nuvolePiccole');
+    nuvole.create(1100, 100, 'nuvoleGrandi');
     
     //  Here we create the ground.
     //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
-    platforms.create(400, 568, 'ground').setScale(2).refreshBody();
-    platforms.create(1200, 568, 'ground').setScale(2).refreshBody();
+    platforms.create(900, 568, 'terreno').setScale(0.5).refreshBody();
+    platforms.create(300, 568, 'terreno').setScale(0.5).refreshBody();
+    //platforms.create(1200, 568, 'ground').setScale(2).refreshBody();
     //platforms.create(800, 568, 'ground').setScale(2).refreshBody();
     //platforms.create(1000, 584, 'ground');
     //platforms.create(600, 284, 'ground');
@@ -372,11 +422,13 @@ function create ()
     porta.setSize(16, 200);
     porta.setOffset(-16, 0);
 
-    ammo = 6;
+    ammo = 5;
     shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
     rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
     gKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
     fKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
+    hKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
+
 
     boundsCollider = this.physics.add.sprite(0, 0, null);
     boundsCollider.setSize(this.physics.world.bounds.width, 1); // Imposta la larghezza uguale a quella del mondo
@@ -391,13 +443,14 @@ function create ()
 
     // The player and its settings
     player = this.physics.add.sprite(100, 400, 'dude');
-    drone = this.physics.add.sprite(200, 480, 'drone');
+    drone = this.physics.add.sprite(400, 480, 'drone');
     drone.body.setAllowGravity(false);
     drone.setScale(0.2);
     drone.refreshBody();
     enemies = this.physics.add.group();
     createEnemy(600, 400);
     createEnemy(500, 400);
+    enemy.flipX = true;
 
 
 
@@ -431,6 +484,51 @@ function create ()
         frameRate: 10,
         repeat: -1
     
+    });
+    this.anims.create({
+        key: 'barra1',
+        frames: [ { key: 'barra', frame: 0 } ],
+        frameRate: 20
+    });
+    this.anims.create({
+        key: 'ammoBar5',
+        frames: [ { key: 'ammoBar', frame: 0 } ],
+        frameRate: 20
+    });
+    this.anims.create({
+        key: 'ammoBar4',
+        frames: [ { key: 'ammoBar', frame: 1 } ],
+        frameRate: 20
+    });
+    this.anims.create({
+        key: 'ammoBar3',
+        frames: [ { key: 'ammoBar', frame: 2 } ],
+        frameRate: 20
+    });
+    this.anims.create({
+        key: 'ammoBar2',
+        frames: [ { key: 'ammoBar', frame: 3 } ],
+        frameRate: 20
+    });
+    this.anims.create({
+        key: 'ammoBar1',
+        frames: [ { key: 'ammoBar', frame: 4 } ],
+        frameRate: 20
+    });
+    this.anims.create({
+        key: 'ammoBar0',
+        frames: [ { key: 'ammoBar', frame: 5 } ],
+        frameRate: 20
+    });
+    this.anims.create({
+        key: 'barra2',
+        frames: [ { key: 'barra', frame: 1 } ],
+        frameRate: 20
+    });
+    this.anims.create({
+        key: 'barra3',
+        frames: [ { key: 'barra', frame: 2 } ],
+        frameRate: 20
     });
     this.anims.create({
         key: 'drone_idle',
@@ -563,20 +661,7 @@ function create ()
     cursors = this.input.keyboard.createCursorKeys();
 
     //  Some stars to collect, 12 in total, evenly spaced 70 pixels apart along the x axis
-    stars = this.physics.add.group({
-        key: 'star',
-        repeat: 11,
-        setXY: { x: 12, y: 0, stepX: 70 }
-    });
 
-    stars.children.iterate(function (child) {
-
-        //  Give each star a slightly different bounce
-        //child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
-
-    });
-
-    bombs = this.physics.add.group();
     shields = this.physics.add.group();
     proiettili = this.physics.add.group();
     proiettili_enemy = this.physics.add.group();
@@ -593,24 +678,26 @@ function create ()
     shield.setScale(0.3);
     shield.anims.play('medKit_anim');
 
-    
     //  The score
     //scoreText = this.add.text(19, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
-    livesText = this.add.text(16, 16, 'Lives: '+ lives, { fontSize: '32px', fill: '#000' });
-    ammoText = this.add.text(16, 60, 'Munizioni: ' + ammo, { fontSize: '32px', fill: '#000' });
-    levelText = this.add.text(16, 104, 'Livello: ' + livello, { fontSize: '32px', fill: '#000' });
+    //livesText = this.add.text(16, 16, 'Lives: '+ lives, { fontSize: '32px', fill: '#000' });
+    barra = this.physics.add.sprite(200, 100, 'barra').setScale(0.2);
+    barra.body.immovable= true;
+    barra.body.allowGravity= false;
+
+    barraAmmo = this.physics.add.sprite(93, 200, 'ammoBar').setScale(2.5);
+    barraAmmo.body.immovable= true;
+    barraAmmo.body.allowGravity= false;
+    //ammoText = this.add.text(16, 60, 'Munizioni: ' + ammo, { fontSize: '32px', fill: '#000' });
+    //levelText = this.add.text(16, 104, 'Livello: ' + livello, { fontSize: '32px', fill: '#000' });
 
     this.physics.world.setBoundsCollision(true, true, true, true);
-    
     //  Collide the player and the stars with the platforms
     this.physics.add.collider(player, platforms);
     this.physics.add.collider(enemies, ascensori);
     this.physics.add.collider(enemies, platforms);
     this.physics.add.collider(fermi,ascensori);
-    this.physics.add.collider(stars, platforms);
-    this.physics.add.collider(bombs, platforms);
     this.physics.add.collider(shields, platforms);
-    this.physics.add.collider(proiettili, bombs);
     this.physics.add.collider(ascensori, platforms, setVariabile, null, this);
     this.physics.add.overlap(player, ascensori, ascensoreFunziona, null, this);
     this.physics.add.collider(proiettili, fermi);
@@ -626,9 +713,7 @@ function create ()
     ascensoreX = ascensore.x;
 
     //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
-    this.physics.add.overlap(player, stars, collectStar, null, this);
-
-    this.physics.add.collider(player, bombs, hitBomb, null, this);
+   
     this.physics.add.collider(player, shields, collectLives, null, this);
 
     
@@ -648,7 +733,7 @@ function update ()
  
     if (!gameOver){
         if (!drone.nemicoMorto && !drone.nemicoColpito && !drone.inizioEsp){
-            if (proiettilePartito && distanzaPlayerEnemyY(player, drone)<20){
+            if (proiettilePartito && distanzaPlayerEnemyY(player, drone)<50){
                 drone.enemyTriggered = true;
             }
             if ((drone.enemyTriggered || (distanzaPlayerEnemyY(player, drone)<50 && distanzaPlayerEnemyX(player, drone)<200 && ((player.x < drone.x && !drone.flipX) || (player.x > drone.x && drone.flipX))))){
@@ -685,9 +770,9 @@ function update ()
                         enemy.isFiringEnemy = true;
                         enemy.anims.play('fire_enemy', true);
                         enemy.ultimoSparo_enemy = time;
-                        if (!enemy.nemicoColpito && !enemy.nemicoMorto){
+                        if (!enemy.nemicoColpito && enemy.isFiringEnemy && !enemy.nemicoMorto){
                             scene.time.delayedCall(200, () => {
-                                if (!enemy.nemicoColpito && !enemy.nemicoMorto){
+                                if (!enemy.nemicoColpito && enemy.isFiringEnemy && !enemy.nemicoMorto){
                                     if (enemy.flipX){
                                         proiettile_enemy = proiettili_enemy.create(enemy.x-43, enemy.y+15, 'proiettile');
                                         proiettile_enemy.setScale(0.5);
@@ -749,7 +834,10 @@ function update ()
             //ascensore.x = ascensoreX;
             //ascensore.setVelocityX(0);
         }*/
-        
+        if (hKey.isDown){
+            scene.scene.restart();
+            //scene.scene.start('level1');
+        }
         if (collisione && !ascensore.body.touching.up){
             collisione = false;
         }
@@ -782,15 +870,20 @@ function update ()
             //collisione = false;
         }
         if (!player.colpito){
-            if (ammo < 6 && rKey.isDown & player.body.touching.down){
+            if (ammo < 5 && rKey.isDown & player.body.touching.down){
                 player.setVelocityX(0);
                 player.anims.play('reload', true);
                 isReloading = true;
-                this.time.delayedCall(player.anims.currentAnim.duration, () => {
-                    ammo = 6;
-                    ammoText.setText('Munizioni: ' + ammo);
-                    isReloading = false;
-                });
+                if (isReloading && !player.colpito){
+                    this.time.delayedCall(player.anims.currentAnim.duration, () => {
+                        if (isReloading && !player.colpito){
+                            ammo = 5;
+                            barraAmmo.anims.play('ammoBar5');
+                            //ammoText.setText('Munizioni: ' + ammo);
+                            isReloading = false;
+                        }
+                    });
+                }
             } else if (!isReloading && !isGranating && !isMelee){
                 if (fKey.isDown){
                     isMelee = true;
@@ -839,9 +932,9 @@ function update ()
                         player.anims.play('fire', true);
                         ultimoSparo = time;
                         isFiring = true;
-                        if (!player.colpito){
+                        if (isFiring&& !player.colpito){
                             this.time.delayedCall(200, () => {
-                                if (!player.colpito){
+                                if (isFiring&& !player.colpito){
                                     proiettilePartito = true;
                                     if (player.flipX){
                                         var proiettile = proiettili.create(player.x-43, player.y+15, 'proiettile');
@@ -861,7 +954,18 @@ function update ()
                                     
                                     proiettile.setCollideWorldBounds(true);
                                     ammo--;
-                                    ammoText.setText('Munizioni: ' + ammo);
+                                    if (ammo == 4){
+                                        barraAmmo.anims.play('ammoBar4');
+                                    } else if (ammo == 3){
+                                        barraAmmo.anims.play('ammoBar3');
+                                    } else if (ammo == 2){
+                                        barraAmmo.anims.play('ammoBar2');
+                                    } else if (ammo == 1){
+                                        barraAmmo.anims.play('ammoBar1');
+                                    } else if (ammo == 0){
+                                        barraAmmo.anims.play('ammoBar0');
+                                    }
+                                    //ammoText.setText('Munizioni: ' + ammo);
                                     /*if (nemicoColpito){
                                         proiettile.disableBody(true, true);
                                     }*/
@@ -945,25 +1049,46 @@ function dannoPlayer(player, proiettile_enemy){
         player.anims.play("colpito");
         scene.time.delayedCall(player.anims.currentAnim.duration, () => {
             player.colpito = false;
+            
         });
     }
+    isReloading = false;
+        isFiring = false;
+        isGranating = false;
     player.colpito = true;
     proiettile_enemy.destroy();
     lives--;
-    livesText.setText('Lives: ' + lives);
+    if (lives == 2){
+        barra.anims.play("barra2");
+    }
+    if (lives == 1){
+        barra.anims.play("barra3");
+    }
+    //livesText.setText('Lives: ' + lives);
 }
 function playerDead(){
-    gameOver = true;
-    player.anims.play('death', true);
-    player.setVelocityX(0);
-    player.disableBody();
-    scene.time.delayedCall(player.anims.currentAnim.duration, () => {
-        platforms.create(400, 300, 'game');
-        player.destroy();
-        morte = true;
-        scene.physics.pause();
-        return;
-    });     
+    if (!morte){
+        gameOver = true;
+        player.anims.play('death', true);
+        player.setVelocityX(0);
+        player.disableBody();
+        barra.disableBody(true, true);
+        barra.destroy();
+        var barra_morte = scene.physics.add.staticGroup();
+            
+        var barraSfondo = barra_morte.create(94, 101, 'barraSfondo').setScale(0.21);
+        barra = barra_morte.create(94, 99, 'barra_morte').setScale(0.2);
+        var teschio = barra_morte.create(93, 97, 'teschio').setScale(0.09);
+        //teschio.setTint(0xff6666);
+        scene.time.delayedCall(player.anims.currentAnim.duration, () => {
+            platforms.create(400, 300, 'game');
+            player.destroy();
+            
+            morte = true;
+            scene.physics.pause();
+            return;
+        }); 
+    }    
 }
 function dannoNemico(proiettile, enemy) {
     if (!enemy.nemicoMorto){
@@ -994,6 +1119,7 @@ function dannoNemico(proiettile, enemy) {
                 numeroNemiciRimanenti--;
             });
         }
+        enemy.isFiringEnemy = false;
     }
 }
 function setVariabile(){
@@ -1130,75 +1256,23 @@ function ascensoreFunziona(player, ascensore){
         });
     }*/
 }
-function collectStar (player, star)
-{
-    star.disableBody(true, true);
-    
 
-    //  Add and update the score
-    score += 10;
-    //scoreText.setText('Score: ' + score);
-
-    if (stars.countActive(true) === 0)
-    {
-        //  A new batch of stars to collect
-        stars.children.iterate(function (child) {
-
-            child.enableBody(true, child.x, 0, true, true);
-
-        });
-        var xshield = (player.x < 400) ? Phaser.Math.Between(0, 800) : Phaser.Math.Between(0, 400);
-        var shield = shields.create(xshield, 16, 'shield');
-        shield.setBounce(0.1);
-        var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
-
-        var bomb = bombs.create(x, 16, 'bomb');
-        bomb.setBounce(1);
-        bomb.setCollideWorldBounds(true);
-        bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
-        bomb.allowGravity = false;
-
-       
-
-    }
-}
 function collectLives (player, shield)
 {
     shield.disableBody(true, true);
 
     //  Add and update the score
     lives++;
-    livesText.setText('Lives: ' + lives);
-}
-
-function hitBomb (player, bomb)
-{
-    lives = lives -10;
-    if (lives>1){
-        lives--;
-        livesText.setText('lives: ' + lives);
-        bomb.disableBody(true, true);
-
-        var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
-
-        var bomb = bombs.create(x, 16, 'bomb');
-        bomb.setBounce(1);
-        bomb.setCollideWorldBounds(true);
-        bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
-        bomb.allowGravity = false;
-    } else {
-        lives--;
-        livesText.setText('lives: ' + lives);
-        this.physics.pause();
-
-        //player.setTint(0xff0000);
-
-        //player.anims.play('turn');
-
-        gameOver = true;
+    if (lives == 2){
+        barra.anims.play("barra2");
     }
-    
+    if (lives == 3){
+        barra.anims.play("barra1");
+    }
+    //livesText.setText('Lives: ' + lives);
 }
+
+
 
 </script>
 
