@@ -331,6 +331,7 @@ var scoreText;
 var ammoText;
 var lives = 3;
 var fireRate = 500;
+var schivataRate = 1000;
 var porte;
 var porta;
 var ultimoSparo = -fireRate;
@@ -342,6 +343,8 @@ var isGranatingGo = false;;
 var ascensore;
 var fermi;
 var fermo;
+var controlKey
+var kKey;
 var atterrato = false;
 var collisione = false;
 var shiftKey;
@@ -424,10 +427,12 @@ function create ()
 
     ammo = 5;
     shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
+    controlKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL);
     rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
     gKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
     fKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
     hKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
+    kKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K);
 
 
     boundsCollider = this.physics.add.sprite(0, 0, null);
@@ -601,6 +606,12 @@ function create ()
         frameRate: 10,
         repeat: -1
     });
+    this.anims.create({
+        key: 'roll',
+        frames: this.anims.generateFrameNumbers('dude', { start: 61, end: 66 }),
+        frameRate: 10,
+        repeat: -1
+    });
 
     this.anims.create({
         key: 'right_enemy',
@@ -715,7 +726,7 @@ function create ()
     //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
    
     this.physics.add.collider(player, shields, collectLives, null, this);
-
+    player.tempoSchivata = -1000;
     
 }
 function collisionCallback(proiettile){
@@ -870,6 +881,23 @@ function update ()
             //collisione = false;
         }
         if (!player.colpito){
+            if (controlKey.isDown && !player.isRolling && time - player.tempoSchivata>=schivataRate){
+                player.anims.play("roll");
+                player.tempoSchivata = time;
+                if (player.flipX){
+                    player.setVelocityX(-250);
+                } else {
+                    player.setVelocityX(250);
+                }
+                player.setSize(40, 34);
+                player.setOffset(40, 94);
+                player.isRolling = true;
+                this.time.delayedCall(player.anims.currentAnim.duration, () =>{
+                    player.isRolling = false;
+                    player.setSize(40, 68);
+                    player.setOffset(40, 60);
+                })
+            }
             if (ammo < 5 && rKey.isDown & player.body.touching.down){
                 player.setVelocityX(0);
                 player.anims.play('reload', true);
@@ -884,7 +912,7 @@ function update ()
                         }
                     });
                 }
-            } else if (!isReloading && !isGranating && !isMelee){
+            } else if (!isReloading && !isGranating && !isMelee && !player.isRolling){
                 if (fKey.isDown){
                     isMelee = true;
                     player.setVelocityX(0)
