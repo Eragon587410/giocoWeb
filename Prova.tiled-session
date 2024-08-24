@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "",
+    "activeFile": "Senza Titolo.tmx",
     "expandedProjectPaths": [
         "."
     ],
@@ -45,8 +45,8 @@
     ],
     "project": "Prova.tiled-project",
     "recentFiles": [
-        "Senza Titolo.tmx",
         "sd.tsx",
+        "Senza Titolo.tmx",
         "AllSprites.tsx",
         "prova.tsx"
     ],

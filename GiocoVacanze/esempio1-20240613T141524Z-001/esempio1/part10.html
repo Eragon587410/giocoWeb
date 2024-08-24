@@ -169,107 +169,118 @@ function createMenu(){
         
     startButton.on('pointerdown', function() {
             console.log("ciao");
-            scene.tweens.add({
-                targets: startButton,
-         // Da completamente visibile a metà visibile
-                scale: 1,
-                duration: 150,
-                yoyo: true,
-                repeat: 0,
-                onComplete: () => {
-                // Passa alla scena del menu
-                game.scene.start('tutorial');
-                }
-            });
+            if (!startButton.azione){
+                startButton.azione = true;
+                scene.tweens.add({
+                    targets: startButton,
+            // Da completamente visibile a metà visibile
+                    scale: 1,
+                    duration: 150,
+                    yoyo: true,
+                    repeat: 0,
+                    onComplete: () => {
+                    // Passa alla scena del menu
+                    
+                    game.scene.start('tutorial');
+                    }
+                });
+            }
 
     });
     optionButton.on('pointerdown', function() {
             console.log("ciao");
-            scene.tweens.add({
-                targets: optionButton,
-                scale: 1,
-                duration: 150,
-                yoyo: true,
-                repeat: 0,
-                onComplete: () => {
-                    startButton.visible = false;
-                    optionButton.visible = false;
-                    var optionTitle = scene.add.text(600, 350, 'OPZIONI', { fontSize: '50px', fontStyle: 'bold', fill: '#fff' }).setOrigin(0.5, 0.5).setScale(1.2);
-                    scene.tweens.add({
-                        targets: optionTitle, // Da completamente visibile a metà visibile
-                        duration: 250,
-                        y: 250,
-                        yoyo: false,
-                        repeat: 0
-                    });
-                    var returnButton = scene.add.text(600, 550, 'INDIETRO', { fontSize: '50px', fontStyle: 'bold', fill: '#fff' }).setOrigin(0.5, 0.5).setInteractive();
-                    returnButton.alpha = 0.7;
-                    returnButton.on('pointerover', function() {
+            if (!optionButton.azione){
+                optionButton.azione = true;
+                scene.tweens.add({
+                    targets: optionButton,
+                    scale: 1,
+                    duration: 150,
+                    yoyo: true,
+                    repeat: 0,
+                    onComplete: () => {
+                        startButton.visible = false;
+                        optionButton.visible = false;
+                        var optionTitle = scene.add.text(600, 350, 'OPZIONI', { fontSize: '50px', fontStyle: 'bold', fill: '#fff' }).setOrigin(0.5, 0.5).setScale(1.2);
                         scene.tweens.add({
-                            targets: returnButton,
-                            alpha: { from: 0.7, to: 1 }, // Da completamente visibile a metà visibile
-                            scale: 1.2,
-                            duration: 300,
-                            yoyo: false,
-                            repeat: 0
-                        });  
-                    });
-                    returnButton.on('pointerout', function() {
-                        scene.tweens.add({
-                            targets: returnButton,
-                            alpha: { from: 1, to: 0.7 }, // Da completamente visibile a metà visibile
-                            scale: 1,
-                            duration: 300,
+                            targets: optionTitle, // Da completamente visibile a metà visibile
+                            duration: 250,
+                            y: 250,
                             yoyo: false,
                             repeat: 0
                         });
-                    
-                    }); 
-                    
-                    returnButton.on('pointerdown', function() {
-                        console.log("ciao");
-                        scene.tweens.add({
-                            targets: returnButton, // Da completamente visibile a metà visibile
-                            scale: 1,
-                            duration: 150,
-                            yoyo: true,
-                            repeat: 0,
-                            onComplete: () => {
+                        var returnButton = scene.add.text(600, 550, 'INDIETRO', { fontSize: '50px', fontStyle: 'bold', fill: '#fff' }).setOrigin(0.5, 0.5).setInteractive();
+                        returnButton.alpha = 0.7;
+                        returnButton.on('pointerover', function() {
+                            scene.tweens.add({
+                                targets: returnButton,
+                                alpha: { from: 0.7, to: 1 }, // Da completamente visibile a metà visibile
+                                scale: 1.2,
+                                duration: 300,
+                                yoyo: false,
+                                repeat: 0
+                            });  
+                        });
+                        returnButton.on('pointerout', function() {
+                            scene.tweens.add({
+                                targets: returnButton,
+                                alpha: { from: 1, to: 0.7 }, // Da completamente visibile a metà visibile
+                                scale: 1,
+                                duration: 300,
+                                yoyo: false,
+                                repeat: 0
+                            });
+                        
+                        }); 
+                        
+                        returnButton.on('pointerdown', function() {
+                            if (!returnButton.azione){
+                                returnButton.azione = true;
+                                console.log("ciao");
                                 scene.tweens.add({
-                                    targets: returnButton,
-                                    alpha: { from: 1, to: 0 }, // Da completamente visibile a metà visibile
-                                    duration: 200,
-                                    yoyo: false,
+                                    targets: returnButton, // Da completamente visibile a metà visibile
+                                    scale: 1,
+                                    duration: 150,
+                                    yoyo: true,
                                     repeat: 0,
                                     onComplete: () => {
                                         scene.tweens.add({
-                                            targets: optionTitle,
-                                            alpha: { from: 1, to: 0.7 }, // Da completamente visibile a metà visibile
-                                            scale: 1,
-                                            y: 350,
+                                            targets: returnButton,
+                                            alpha: { from: 1, to: 0 }, // Da completamente visibile a metà visibile
                                             duration: 200,
                                             yoyo: false,
                                             repeat: 0,
                                             onComplete: () => {
-                                                optionTitle.destroy();
-                                                optionButton.visible = true;
-                                                startButton.visible = true;
+                                                scene.tweens.add({
+                                                    targets: optionTitle,
+                                                    alpha: { from: 1, to: 0.7 }, // Da completamente visibile a metà visibile
+                                                    scale: 1,
+                                                    y: 350,
+                                                    duration: 200,
+                                                    yoyo: false,
+                                                    repeat: 0,
+                                                    onComplete: () => {
+                                                        optionTitle.destroy();
+                                                        optionButton.visible = true;
+                                                        startButton.visible = true;
+                                                        optionButton.azione = false;
+                                                    }
+                                                });  
+                                                returnButton.visible = false; 
+                                                returnButton.azione = false; 
                                             }
+                                            
                                         });  
-                                        returnButton.visible = false;  
+                                        
+                                        
+                                                                        
                                     }
-                                    
                                 });  
-                                
-                                
-                                
-                                
                             }
-                        });  
-                        
-                    });
-                }
-            });
+                            
+                        });
+                    }
+                });
+            }
             
         });
             //menuIniziale.add(audioButton);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
@@ -317,6 +328,7 @@ var stars;
 var barraAmmo;
 var rKey;
 var bombs;
+var blinkingText;
 var granate = 12;
 var granata;
 var shields;
@@ -327,6 +339,7 @@ var drone;
 var cursors;
 var enemies;
 var isGranatingGo = false;
+var textObject;
 var score = 0;
 var scene;
 var gameOver = false;
@@ -383,16 +396,22 @@ function preload ()
     this.load.image('barra_morte', 'assets/barra4.png');
     this.load.image('barraSfondo', 'assets/barraSfondo.png');
     this.load.image('teschio', 'assets/teschio.png');
+    this.load.image('textBox', 'assets/textBox.png');
     this.load.spritesheet('dude', 'assets/cazzone.png', { frameWidth: 128, frameHeight: 128 });
     this.load.spritesheet('enemy', 'assets/cazzone.png', { frameWidth: 128, frameHeight: 128 });
+
 }
 function createTutorial (){
+    scene = this;
+    var scena = this;
     //this.cameras.main.setBackgroundColor('0x00BFFF');
     this.add.image(451, 254, 'background').setScale(1.57);
     this.add.image(902, 254, 'background').setScale(1.57);
     gruppi(this);
+    
     platforms.create(300, 554, 'terreno').setScale(1.45).refreshBody();
     platforms.create(1228, 554, 'terreno').setScale(1.45).refreshBody();
+    var textBox = this.add.image(600, 330, 'textBox').setScale(0.50);
     shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
     controlKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL);
     rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
@@ -400,10 +419,77 @@ function createTutorial (){
     fKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
     hKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
     kKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K);
-    player = this.physics.add.sprite(100, 400, 'dude');
-    variabiliPlayer();
+    player = this.physics.add.sprite(100, 444, 'dude');
     
+    variabiliPlayer();
+    creaAnimazioni(scena);
     collider(this);
+    var fullText = "Benvenuta recluta! \nti insegnerò le basi \ndel combattimento!";
+    createtextBox(400, 290, fullText, this);
+    player.anims.play('idle', true);
+    this.time.delayedCall(6000, () => {
+        textBlink("Premi ENTER per continuare", scena);
+        this.input.keyboard.on('keydown', function(event) {
+            if (event.key === "Enter" || event.keyCode === 13) { 
+                scena.input.keyboard.off('keydown');
+                createEnemy(700, 444, scena);
+                variabiliNemici();
+                enemy.anims.play('idle_enemy', true);
+                enemy.flipX = true;
+                textObject.destroy();
+                blinkingText.destroy();
+                createtextBox(350, 315,"Prova a colpire quel nemico!", scena);
+                scena.time.delayedCall(2000, () =>{
+                    textBlink("Premi SPAZIO per sparare", scena);
+                    scena.input.keyboard.on('keydown', function(event) {
+                        if (event.key === " " || event.keyCode === 32) {
+                            scena.input.keyboard.off('keydown');
+                            blinkingText.destroy();
+                            player.anims.play('fire', true);
+                            scena.time.delayedCall(200, () =>{
+                                creaProiettile();
+                            })
+                            scena.time.delayedCall(player.anims.currentAnim.duration, () =>{
+                                player.anims.play('idle', true);
+                                textObject.destroy();
+                                createtextBox(350, 300,"Il bastardo è coriaceo!\nsparagli ancora!", scena);
+                                scena.time.delayedCall(1000, () =>{
+                                    textBlink("Tieni premuto o premi ripetutamente SPAZIO per\nsparare più colpi", scena);
+                                    var ultimoSparo = -fireRate;
+                                    player.spari = 0;
+                                    scena.input.keyboard.on('keydown', function(event) {
+
+                                        if (event.key === " " || event.keyCode === 32) {
+                                            if (scena.time.now - ultimoSparo >= fireRate){
+                                                player.spari++;
+                                                ultimoSparo = scena.time.now;
+                                                player.anims.play('fire', true);
+                                                scena.time.delayedCall(200, () =>{
+                                                    creaProiettile();
+                                                })
+                                                scena.time.delayedCall(player.anims.currentAnim.duration, () =>{
+                                                    player.anims.play('idle', true);
+                                                });
+                                                if (player.spari >= 2){
+                                                    scena.input.keyboard.off('keydown');
+                                                    textObject.destroy();
+                                                    blinkingText.destroy();
+                                                    createtextBox(350, 300, 'Ben fatto!')
+                                                }
+                                            }
+                                        }
+                                    });
+                                });
+                            });  
+                        } 
+                    });
+                })
+                
+                
+            }
+        });
+    })
+    
 }
 function create ()
 {
@@ -475,8 +561,8 @@ function create ()
     drone.body.setAllowGravity(false);
     drone.setScale(0.2);
     drone.refreshBody();
-    createEnemy(600, 400);
-    createEnemy(500, 400);
+    createEnemy(600, 400, scene);
+    createEnemy(500, 400, scene);
     enemy.flipX = true;
 
 
@@ -719,7 +805,7 @@ function create ()
     //ammoText = this.add.text(16, 60, 'Munizioni: ' + ammo, { fontSize: '32px', fill: '#000' });
     //levelText = this.add.text(16, 104, 'Livello: ' + livello, { fontSize: '32px', fill: '#000' });
 
-    collider();
+    collider(scene);
 
     
     ascensoreX = ascensore.x;
@@ -968,24 +1054,7 @@ function update ()
                             this.time.delayedCall(200, () => {
                                 if (isFiring&& !player.colpito){
                                     proiettilePartito = true;
-                                    if (player.flipX){
-                                        var proiettile = proiettili.create(player.x-43, player.y+15, 'proiettile');
-                                        proiettile.setScale(0.5);
-                                        proiettile.setSize(9, 5);
-                                        proiettile.setOffset(31, 17);
-                                        proiettile.flipX = true;
-                                        proiettile.setVelocityX(-1500);
-                                    } else {
-                                        var proiettile = proiettili.create(player.x+43, player.y+15, 'proiettile');
-                                        proiettile.setScale(0.5);
-                                        proiettile.setSize(9, 5);
-                                        proiettile.setOffset(31, 17);
-                                        proiettile.setVelocityX(1500);
-                                    }
-                                    proiettile.body.setAllowGravity(false);
-                                    
-                                    proiettile.setCollideWorldBounds(true);
-                                    ammo--;
+                                    creaProiettile();
                                     if (ammo == 4){
                                         barraAmmo.anims.play('ammoBar4');
                                     } else if (ammo == 3){
@@ -1001,13 +1070,14 @@ function update ()
                                     /*if (nemicoColpito){
                                         proiettile.disableBody(true, true);
                                     }*/
-                                    proiettile.body.onWorldBounds = true;
                                     
-                                    this.physics.world.on('worldbounds', function(body) {
-                                        if (body.gameObject === proiettile) {
-                                            proiettile.destroy();
-                                        }
-                                    }, this);
+                                    proiettili.children.iterate(function (proiettile) {
+                                        scene.physics.world.on('worldbounds', function(body) {
+                                            if (body.gameObject === proiettile) {
+                                                proiettile.destroy();
+                                            }
+                                        }, this);
+                                    });
                                 }
                             });
                         
@@ -1130,12 +1200,14 @@ function dannoNemico(proiettile, enemy) {
             enemy.vita--;
             enemy.setVelocityX(0);
             proiettile.disableBody(true, true);
-            enemy.anims.play('colpito_enemy');
+            enemy.anims.play('colpito_enemy', true);
             scene.time.delayedCall(enemy.anims.currentAnim.duration, () => {
                 enemy.nemicoColpito = false;
+                enemy.anims.play('idle_enemy', true);
             });
         } else {
             enemy.enemyTriggered = false;
+            enemy.vita = 0;
             enemy.nemicoMorto = true;
             enemy.nemicoColpito = true;
             enemy.anims.play('death_enemy', true);
@@ -1178,7 +1250,7 @@ function level2(){
     console.log(ciao);
 }
 
-function createEnemy(x, y){
+function createEnemy(x, y, scene){
     enemy = scene.physics.add.sprite(x, y, 'enemy');
     enemies.add(enemy);
 }
@@ -1206,7 +1278,7 @@ function levelUp(){
         createEnemy(600, 400);
         createEnemy(500, 400);
         createEnemy(400, 200);
-        createEnemy(300, 200);
+        createEnemy(300, 200,);
         variabiliNemici();
     }
 }
@@ -1325,6 +1397,259 @@ function collider(scena){
     scena.physics.add.overlap(player, drone, contattoDrone, null, this);
     scena.physics.add.collider(player, porte, contattoPorta, null, this);
     scena.physics.add.collider(player, shields, collectLives, null, this);
+}
+function creaProiettile(){
+    if (player.flipX){
+        var proiettile = proiettili.create(player.x-43, player.y+15, 'proiettile');
+        proiettile.setScale(0.5);
+        proiettile.setSize(9, 5);
+        proiettile.setOffset(31, 17);
+        proiettile.flipX = true;
+        proiettile.setVelocityX(-1500);
+    } else {
+        var proiettile = proiettili.create(player.x+43, player.y+15, 'proiettile');
+        proiettile.setScale(0.5);
+        proiettile.setSize(9, 5);
+        proiettile.setOffset(31, 17);
+        proiettile.setVelocityX(1500);
+    }
+    proiettile.body.setAllowGravity(false);
+    
+    proiettile.setCollideWorldBounds(true);
+    ammo--;
+    proiettile.body.onWorldBounds = true;
+}
+function createtextBox(x,y,testo, scene){
+
+    
+    var currentText = "";
+    textObject = scene.add.text(x, y, currentText, { fontSize: '28px', fill: '#ffffff'});
+
+    var i = 0;
+    var timer = scene.time.addEvent({
+        delay: 100, // Ritardo in millisecondi tra una lettera e l'altra
+        callback: function() {
+            currentText += testo[i];
+            textObject.setText(currentText);
+            i++;
+
+            // Ferma il timer quando tutto il testo è stato visualizzato
+            if (i >= testo.length) {
+                timer.remove(false);
+            }
+        },
+        callbackScope: this,
+        loop: true
+    });
+}
+function textBlink(text, scena){
+    blinkingText = scena.add.text(600, 450, text, {
+            fontSize: '32px',
+            fill: '#fff'
+        }).setOrigin(0.5, 0.5);
+        blinkingText.alpha = 0;
+        scena.tweens.add({
+            targets: blinkingText,
+            alpha: { from: 0, to: 1 }, // Partendo da opacità 1 a 0
+            duration: 1000, // Durata della transizione
+            yoyo: true, // Torna indietro dopo aver raggiunto 0
+            repeat: -1, // Ripete all'infinito
+            ease: 'Sine.easeInOut' // Easing per un effetto morbido
+        });
+}
+function creaAnimazioni(scena){
+    scena.anims.create({
+        key: 'left',
+        frames: scena.anims.generateFrameNumbers('dude', { start: 7, end: 13 }),
+        frameRate: 10,
+        repeat: -1
+    
+    });
+
+    scena.anims.create({
+        key: 'fire',
+        frames: scena.anims.generateFrameNumbers('dude', { start: 14, end: 17 }),
+        frameRate: 10,
+        repeat: 0
+    
+    });
+    scena.anims.create({
+        key: 'barra1',
+        frames: [ { key: 'barra', frame: 0 } ],
+        frameRate: 20
+    });
+    scena.anims.create({
+        key: 'ammoBar5',
+        frames: [ { key: 'ammoBar', frame: 0 } ],
+        frameRate: 20
+    });
+    scena.anims.create({
+        key: 'ammoBar4',
+        frames: [ { key: 'ammoBar', frame: 1 } ],
+        frameRate: 20
+    });
+    scena.anims.create({
+        key: 'ammoBar3',
+        frames: [ { key: 'ammoBar', frame: 2 } ],
+        frameRate: 20
+    });
+    scena.anims.create({
+        key: 'ammoBar2',
+        frames: [ { key: 'ammoBar', frame: 3 } ],
+        frameRate: 20
+    });
+    scena.anims.create({
+        key: 'ammoBar1',
+        frames: [ { key: 'ammoBar', frame: 4 } ],
+        frameRate: 20
+    });
+    scena.anims.create({
+        key: 'ammoBar0',
+        frames: [ { key: 'ammoBar', frame: 5 } ],
+        frameRate: 20
+    });
+    scena.anims.create({
+        key: 'barra2',
+        frames: [ { key: 'barra', frame: 1 } ],
+        frameRate: 20
+    });
+    scena.anims.create({
+        key: 'barra3',
+        frames: [ { key: 'barra', frame: 2 } ],
+        frameRate: 20
+    });
+    scena.anims.create({
+        key: 'drone_idle',
+        frames: scena.anims.generateFrameNumbers('drone', { start: 0, end: 7 }),
+        frameRate: 10,
+        repeat: -1
+    
+    });
+    scena.anims.create({
+        key: 'drone_corsa',
+        frames: scena.anims.generateFrameNumbers('drone', { start: 8, end: 17 }),
+        frameRate: 10,
+        repeat: -1
+    
+    });
+    scena.anims.create({
+        key: 'drone_esplodi',
+        frames: scena.anims.generateFrameNumbers('drone', { start: 18, end: 29 }),
+        frameRate: 10,
+        repeat: -1
+    
+    });
+    scena.anims.create({
+        key: 'fire_enemy',
+        frames: scena.anims.generateFrameNumbers('enemy', { start: 14, end: 17 }),
+        frameRate: 10,
+        repeat: -1
+    
+    });
+
+    scena.anims.create({
+        key: 'idle',
+        frames: scena.anims.generateFrameNumbers('dude', { start: 0, end: 6 }),
+        frameRate: 20,
+        repeat: -1
+    });
+    scena.anims.create({
+        key: 'medKit_anim',
+        frames: scena.anims.generateFrameNumbers('medKit', { start: 0, end: 11 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    scena.anims.create({
+        key: 'idle_enemy',
+        frames: scena.anims.generateFrameNumbers('enemy', { start: 0, end: 6 }),
+        frameRate: 20,
+        repeat: -1
+    });
+    scena.anims.create({
+        key: 'granate_anim',
+        frames: scena.anims.generateFrameNumbers('grenade', { start: 0, end: 8 }),
+        frameRate: 9,
+        repeat: -1
+    });
+    scena.anims.create({
+            key: 'stay',
+            frames: [ { key: 'dude', frame: 24 } ],
+            frameRate: 10
+    });
+
+    scena.anims.create({
+        key: 'right',
+        frames: scena.anims.generateFrameNumbers('dude', { start: 7, end: 13 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    scena.anims.create({
+        key: 'melee',
+        frames: scena.anims.generateFrameNumbers('dude', { start: 58, end: 60 }),
+        frameRate: 10,
+        repeat: 0
+    });
+    scena.anims.create({
+        key: 'roll',
+        frames: scena.anims.generateFrameNumbers('dude', { start: 61, end: 66 }),
+        frameRate: 10,
+        repeat: 0
+    });
+
+    scena.anims.create({
+        key: 'right_enemy',
+        frames: scena.anims.generateFrameNumbers('enemy', { start: 7, end: 13 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    scena.anims.create({
+        key: 'run',
+        frames: scena.anims.generateFrameNumbers('dude', { start: 25, end: 32 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    scena.anims.create({
+        key: 'run_enemy',
+        frames: scena.anims.generateFrameNumbers('enemy', { start: 25, end: 32 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    scena.anims.create({
+        key: 'reload',
+        frames: scena.anims.generateFrameNumbers('dude', { start: 33, end: 45 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    scena.anims.create({
+        key: 'grenade',
+        frames: scena.anims.generateFrameNumbers('dude', { start: 46, end: 54 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    scena.anims.create({
+        key: 'colpito',
+        frames: scena.anims.generateFrameNumbers('dude', { start: 55, end: 57 }),
+        frameRate: 10,
+        repeat: 0
+    });
+    scena.anims.create({
+        key: 'colpito_enemy',
+        frames: scena.anims.generateFrameNumbers('enemy', { start: 55, end: 57 }),
+        frameRate: 10,
+        repeat: 0
+    });
+    scena.anims.create({
+        key: 'death',
+        frames: scena.anims.generateFrameNumbers('dude', { start: 18, end: 24 }),
+        frameRate: 10,
+        repeat: 0
+    });
+    scena.anims.create({
+        key: 'death_enemy',
+        frames: scena.anims.generateFrameNumbers('enemy', { start: 18, end: 24 }),
+        frameRate: 10,
+        repeat: 0
+    });
 }
 function collectLives (player, shield)
 {

@@ -1,0 +1,28 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "erba.tsx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "fileStates": {
+        "erba.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        }
+    },
+    "map.height": 2,
+    "map.width": 20,
+    "openFiles": [
+        "erba.tsx"
+    ],
+    "project": "erba.tiled-project",
+    "recentFiles": [
+        "erba.tsx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.type": 1
+}
