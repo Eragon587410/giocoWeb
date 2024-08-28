@@ -453,7 +453,7 @@ function createTutorial (){
                                 player.anims.play('idle', true);
                                 textObject.destroy();
                                 createtextBox(350, 300,"Il bastardo è coriaceo!\nsparagli ancora!", scena);
-                                scena.time.delayedCall(1000, () =>{
+                                scena.time.delayedCall(3000, () =>{
                                     textBlink("Tieni premuto o premi ripetutamente SPAZIO per\nsparare più colpi", scena);
                                     var ultimoSparo = -fireRate;
                                     player.spari = 0;
@@ -474,7 +474,7 @@ function createTutorial (){
                                                     scena.input.keyboard.off('keydown');
                                                     textObject.destroy();
                                                     blinkingText.destroy();
-                                                    createtextBox(350, 300, 'Ben fatto!')
+                                                    createtextBox(340, 295, "L'approccio furtivo ti consente\ndi risparmiare proiettili\ne di non allertare i nemici!", scena);
                                                 }
                                             }
                                         }
