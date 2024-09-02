@@ -36,6 +36,12 @@ var Logo = {
     create: createLogo
 }
 
+var bossFight = {
+    preload: preload,
+    create: createBossFight,
+    update: update
+}
+
 function preloadLogo(){
     this.load.image('logo', 'assets/logo.png');
     this.load.image('logoBello', 'assets/cazzari2.png');
@@ -181,7 +187,7 @@ function createMenu(){
                     onComplete: () => {
                     // Passa alla scena del menu
                     
-                    game.scene.start('tutorial');
+                    game.scene.start('BossFight');
                     }
                 });
             }
@@ -308,6 +314,7 @@ var config = {
         }
     },
 };
+var bossBar;
 var barra;
 var tocca;
 var audio;
@@ -349,6 +356,7 @@ var vite;
 var fireRate = 500;
 var schivataRate = 1000;
 var porte;
+var boss;
 var porta;
 var ultimoSparo = -fireRate;
 var ultimoSparo_enemy = -fireRate;
@@ -375,6 +383,7 @@ game.scene.add("Menu", Menu);
 game.scene.add("level1", Level1scene);
 game.scene.add("tutorial", tutorialScene);
 game.scene.add("Logo", Logo);
+game.scene.add("BossFight", bossFight);
 game.scene.start("Menu");
 
 function preload ()
@@ -397,9 +406,75 @@ function preload ()
     this.load.image('barraSfondo', 'assets/barraSfondo.png');
     this.load.image('teschio', 'assets/teschio.png');
     this.load.image('textBox', 'assets/textBox.png');
+    for (var i = 1; i <= 6; i++){
+        this.load.image(`bossBar${i}`, `assets/boss_bar${i}.png`);
+    }
+    this.load.image(`bossBarVuota`, `assets/boss_bar_vuota.png`);
     this.load.spritesheet('dude', 'assets/cazzone.png', { frameWidth: 128, frameHeight: 128 });
     this.load.spritesheet('enemy', 'assets/cazzone.png', { frameWidth: 128, frameHeight: 128 });
+    //this.load.spritesheet('boss', 'assets/boss.png', { frameWidth: 600, frameHeight: 480 });
+    this.load.spritesheet('boss_idle', 'assets/boss_idle.png', { frameWidth: 600, frameHeight: 480 });
+    this.load.spritesheet('boss_run', 'assets/boss_run.png', { frameWidth: 600, frameHeight: 480 });
+    this.load.spritesheet('boss_attack', 'assets/boss_light_attack.png', { frameWidth: 600, frameHeight: 480 });
+    this.load.spritesheet('boss_heavy', 'assets/boss_heavy.png', { frameWidth: 600, frameHeight: 480 });
+    this.load.spritesheet('boss_hurt', 'assets/boss_hurt.png', { frameWidth: 600, frameHeight: 480 });
+    this.load.spritesheet('boss_death', 'assets/boss_death.png', { frameWidth: 600, frameHeight: 480 });
+    this.load.spritesheet('boss_falling', 'assets/boss_falling.png', { frameWidth: 600, frameHeight: 480 });
+    this.load.spritesheet('boss_flying', 'assets/boss_flyingUp.png', { frameWidth: 600, frameHeight: 480 });
+    this.load.spritesheet('boss_jump', 'assets/boss_fullJump.png', { frameWidth: 600, frameHeight: 480 });
+    this.load.spritesheet('boss_charge', 'assets/boss_charge.png', { frameWidth: 600, frameHeight: 480 });
 
+
+}
+function addBossBarLife(x,y, i){
+    bossBar.barra.push(bossBar.create(x,y, `bossBar${i}`).setScale(0.505));
+}
+function createBossFight(){
+    scene = this;
+    var scena = this;
+    this.add.image(450, 254, 'background').setScale(1.57);
+    this.add.image(902, 254, 'background').setScale(1.57);
+    gruppi(this);
+
+    bossBar = this.physics.add.staticGroup();
+    bossBar.vuto = bossBar.create(600, 150, "bossBarVuota").setScale(0.5);
+    bossBar.barra = new Array();
+    addBossBarLife(221, 152, 6);
+    addBossBarLife(305.5, 152, 2);
+    addBossBarLife(415.5, 152, 3);
+    addBossBarLife(513.5, 152, 4);
+    addBossBarLife(606.5, 152, 5);
+    addBossBarLife(699.5, 152, 4);
+    addBossBarLife(797.5, 152, 3);
+    addBossBarLife(907.5, 152, 2);
+    addBossBarLife(992, 152, 1);
+    platforms.create(300, 554, 'terreno').setScale(1.45).refreshBody();
+    platforms.create(1228, 554, 'terreno').setScale(1.45).refreshBody();
+    shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
+    controlKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL);
+    rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+    gKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
+    fKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
+    hKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
+    kKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K);
+    player = this.physics.add.sprite(100, 444, 'dude');
+    cursors = this.input.keyboard.createCursorKeys();
+    boss = this.physics.add.sprite(400, 300, 'boss_idle');
+    boss.setScale(0.5).refreshBody();
+    variabiliPlayer();
+    creaAnimazioni(scena);
+    boss.anims.play('boss_idle', true);
+    boss.ultimoSparo = -700;
+    boss.vita = 27;
+    collider(this);
+    ammo = 5;
+    barra = this.physics.add.sprite(200, 100, 'barra').setScale(0.2);
+    barra.body.immovable= true;
+    barra.body.allowGravity= false;
+
+    barraAmmo = this.physics.add.sprite(93, 200, 'ammoBar').setScale(2.5);
+    barraAmmo.body.immovable= true;
+    barraAmmo.body.allowGravity= false;
 }
 function createTutorial (){
     scene = this;
@@ -419,7 +494,8 @@ function createTutorial (){
     fKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
     hKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
     kKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K);
-    player = this.physics.add.sprite(100, 444, 'dude');
+    player = this.physics.add.sprite(100, 444, 'dude');ù
+    
     
     variabiliPlayer();
     creaAnimazioni(scena);
@@ -580,198 +656,7 @@ function create ()
     
 
     //  Our player animations, turning, walking left and walking right.
-    this.anims.create({
-        key: 'left',
-        frames: this.anims.generateFrameNumbers('dude', { start: 7, end: 13 }),
-        frameRate: 10,
-        repeat: -1
-    
-    });
-
-    this.anims.create({
-        key: 'fire',
-        frames: this.anims.generateFrameNumbers('dude', { start: 14, end: 17 }),
-        frameRate: 10,
-        repeat: -1
-    
-    });
-    this.anims.create({
-        key: 'barra1',
-        frames: [ { key: 'barra', frame: 0 } ],
-        frameRate: 20
-    });
-    this.anims.create({
-        key: 'ammoBar5',
-        frames: [ { key: 'ammoBar', frame: 0 } ],
-        frameRate: 20
-    });
-    this.anims.create({
-        key: 'ammoBar4',
-        frames: [ { key: 'ammoBar', frame: 1 } ],
-        frameRate: 20
-    });
-    this.anims.create({
-        key: 'ammoBar3',
-        frames: [ { key: 'ammoBar', frame: 2 } ],
-        frameRate: 20
-    });
-    this.anims.create({
-        key: 'ammoBar2',
-        frames: [ { key: 'ammoBar', frame: 3 } ],
-        frameRate: 20
-    });
-    this.anims.create({
-        key: 'ammoBar1',
-        frames: [ { key: 'ammoBar', frame: 4 } ],
-        frameRate: 20
-    });
-    this.anims.create({
-        key: 'ammoBar0',
-        frames: [ { key: 'ammoBar', frame: 5 } ],
-        frameRate: 20
-    });
-    this.anims.create({
-        key: 'barra2',
-        frames: [ { key: 'barra', frame: 1 } ],
-        frameRate: 20
-    });
-    this.anims.create({
-        key: 'barra3',
-        frames: [ { key: 'barra', frame: 2 } ],
-        frameRate: 20
-    });
-    this.anims.create({
-        key: 'drone_idle',
-        frames: this.anims.generateFrameNumbers('drone', { start: 0, end: 7 }),
-        frameRate: 10,
-        repeat: -1
-    
-    });
-    this.anims.create({
-        key: 'drone_corsa',
-        frames: this.anims.generateFrameNumbers('drone', { start: 8, end: 17 }),
-        frameRate: 10,
-        repeat: -1
-    
-    });
-    this.anims.create({
-        key: 'drone_esplodi',
-        frames: this.anims.generateFrameNumbers('drone', { start: 18, end: 29 }),
-        frameRate: 10,
-        repeat: -1
-    
-    });
-    this.anims.create({
-        key: 'fire_enemy',
-        frames: this.anims.generateFrameNumbers('enemy', { start: 14, end: 17 }),
-        frameRate: 10,
-        repeat: -1
-    
-    });
-
-    this.anims.create({
-        key: 'idle',
-        frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 6 }),
-        frameRate: 20,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'medKit_anim',
-        frames: this.anims.generateFrameNumbers('medKit', { start: 0, end: 11 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'idle_enemy',
-        frames: this.anims.generateFrameNumbers('enemy', { start: 0, end: 6 }),
-        frameRate: 20,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'granate_anim',
-        frames: this.anims.generateFrameNumbers('grenade', { start: 0, end: 8 }),
-        frameRate: 9,
-        repeat: -1
-    });
-    this.anims.create({
-            key: 'stay',
-            frames: [ { key: 'dude', frame: 24 } ],
-            frameRate: 10
-    });
-
-    this.anims.create({
-        key: 'right',
-        frames: this.anims.generateFrameNumbers('dude', { start: 7, end: 13 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'melee',
-        frames: this.anims.generateFrameNumbers('dude', { start: 58, end: 60 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'roll',
-        frames: this.anims.generateFrameNumbers('dude', { start: 61, end: 66 }),
-        frameRate: 10,
-        repeat: -1
-    });
-
-    this.anims.create({
-        key: 'right_enemy',
-        frames: this.anims.generateFrameNumbers('enemy', { start: 7, end: 13 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'run',
-        frames: this.anims.generateFrameNumbers('dude', { start: 25, end: 32 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'run_enemy',
-        frames: this.anims.generateFrameNumbers('enemy', { start: 25, end: 32 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'reload',
-        frames: this.anims.generateFrameNumbers('dude', { start: 33, end: 45 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'grenade',
-        frames: this.anims.generateFrameNumbers('dude', { start: 46, end: 54 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'colpito',
-        frames: this.anims.generateFrameNumbers('dude', { start: 55, end: 57 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'colpito_enemy',
-        frames: this.anims.generateFrameNumbers('enemy', { start: 55, end: 57 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'death',
-        frames: this.anims.generateFrameNumbers('dude', { start: 18, end: 24 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'death_enemy',
-        frames: this.anims.generateFrameNumbers('enemy', { start: 18, end: 24 }),
-        frameRate: 10,
-        repeat: -1
-    });
+    creaAnimazioni(scene);
     
     //  Input Events
     cursors = this.input.keyboard.createCursorKeys();
@@ -811,39 +696,99 @@ function create ()
     ascensoreX = ascensore.x;
 
     //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
-   
-    
-    
-    
-}
-function collisionCallback(proiettile){
-    //proiettile.disableBody();
-    //console.log("Il giocatore ha colpito il bordo della finestra!");
-}
-function collisionCallbackEnemy(proiettile_enemy){
-    proiettile_enemy.disableBody();
-    //console.log("Il giocatore ha colpito il bordo della finestra!");
-    
 }
 function update ()
 {
     var time = scene.time.now;
  
     if (!gameOver){
-        if (!drone.nemicoMorto && !drone.nemicoColpito && !drone.inizioEsp){
-            if (proiettilePartito && distanzaPlayerEnemyY(player, drone)<50){
-                drone.enemyTriggered = true;
-            }
-            if ((drone.enemyTriggered || (distanzaPlayerEnemyY(player, drone)<50 && distanzaPlayerEnemyX(player, drone)<200 && ((player.x < drone.x && !drone.flipX) || (player.x > drone.x && drone.flipX))))){
-                drone.enemyTriggered = true;
-                drone.anims.play('drone_corsa', true);
-                        if (drone.x > player.x){
-                            drone.flipX = false;
-                            drone.setVelocityX(-150);
-                        } else {
-                            drone.flipX = true;
-                            drone.setVelocityX(150);
+        if (boss && !boss.morto){
+            if (!boss.nemicoColpito){
+                if (player.x > boss.x){
+                    boss.flipX = true;
+                } else {
+                    boss.flipX = false;
+                }
+                if (distanzaPlayerEnemyX(player, boss)>400){
+                    boss.anims.play("boss_run", true);
+                    boss.isFiring = false;
+                    if (boss.flipX){
+                        boss.setVelocityX(150);
+                    } else {
+                        boss.setVelocityX(-150);
+                    }
+                } else if (time - boss.ultimoSparo > 2000 && !boss.isFiring && !boss.nemicoColpito){
+                    boss.setVelocityX(0);
+                    boss.ultimoSparo = time;
+                        boss.isFiring = true;
+                        boss.anims.play("boss_attack", true);                                               
+                        if (boss.isFiring && !boss.nemicoColpito){
+                            this.time.delayedCall(1000, ()=>{
+                                if (boss.isFiring && !boss.nemicoColpito){
+                                    
+                                    if (boss.flipX){
+                                        proiettile_enemy = proiettili_enemy.create(boss.x+15, boss.y+50, 'proiettile');
+                                        proiettile_enemy.setVelocityX(1500);
+                                        proiettile_enemy2 = proiettili_enemy.create(boss.x+130, boss.y+50, 'proiettile');
+                                        proiettile_enemy2.setVelocityX(1500);
+                                    } else {
+                                        proiettile_enemy = proiettili_enemy.create(boss.x-15, boss.y+50, 'proiettile');
+                                        proiettile_enemy.setVelocityX(-1500);
+                                        proiettile_enemy.flipX = true;
+                                        proiettile_enemy2 = proiettili_enemy.create(boss.x-130, boss.y+50, 'proiettile');
+                                        proiettile_enemy2.setVelocityX(-1500);
+                                        proiettile_enemy2.flipX = true;
+                                        
+                                    }
+                                    proiettile_enemy.body.setAllowGravity(false);
+                                    proiettile_enemy.setCollideWorldBounds(true);
+                                    proiettile_enemy.body.onWorldBounds = true;
+                                    proiettile_enemy.setScale(1.3);
+                                    proiettile_enemy2.body.setAllowGravity(false);
+                                    proiettile_enemy2.setCollideWorldBounds(true);
+                                    proiettile_enemy2.body.onWorldBounds = true;
+                                    proiettile_enemy2.setScale(1.3);
+                                    scene.physics.world.on('worldbounds', function(body) {
+                                        if (body.gameObject === proiettile_enemy) {
+                                            proiettile_enemy.destroy();
+                                        }
+                                    }, this);
+                                    scene.physics.world.on('worldbounds', function(body) {
+                                        if (body.gameObject === proiettile_enemy2) {
+                                            proiettile_enemy2.destroy();
+                                        }
+                                    }, this);
+                                }
+                            });
+                            if (boss.isFiring && !boss.nemicoColpito){
+                                scene.time.delayedCall(boss.anims.currentAnim.duration, ()=>{
+                                    boss.isFiring = false;
+                                });
+                            }
                         }
+                    
+                } else if (!boss.isFiring){
+                    boss.setVelocityX(0);
+                    boss.anims.play("boss_idle", true);
+                }
+            }     
+        }
+        if (drone){
+            if (!drone.nemicoMorto && !drone.nemicoColpito && !drone.inizioEsp){
+                if (proiettilePartito && distanzaPlayerEnemyY(player, drone)<50){
+                    drone.enemyTriggered = true;
+                }
+                if ((drone.enemyTriggered || (distanzaPlayerEnemyY(player, drone)<50 && distanzaPlayerEnemyX(player, drone)<200 && ((player.x < drone.x && !drone.flipX) || (player.x > drone.x && drone.flipX))))){
+                    drone.enemyTriggered = true;
+                    drone.anims.play('drone_corsa', true);
+                            if (drone.x > player.x){
+                                drone.flipX = false;
+                                drone.setVelocityX(-150);
+                            } else {
+                                drone.flipX = true;
+                                drone.setVelocityX(150);
+                            }
+                }
             }
         }
         enemies.children.iterate(function (enemy) {
@@ -871,23 +816,22 @@ function update ()
                         enemy.isFiringEnemy = true;
                         enemy.anims.play('fire_enemy', true);
                         enemy.ultimoSparo_enemy = time;
+                        
                         if (!enemy.nemicoColpito && enemy.isFiringEnemy && !enemy.nemicoMorto){
                             scene.time.delayedCall(200, () => {
                                 if (!enemy.nemicoColpito && enemy.isFiringEnemy && !enemy.nemicoMorto){
+                                    
                                     if (enemy.flipX){
-                                        proiettile_enemy = proiettili_enemy.create(enemy.x-43, enemy.y+15, 'proiettile');
-                                        proiettile_enemy.setScale(0.5);
-                                        proiettile_enemy.setSize(9, 5);
-                                        proiettile_enemy.setOffset(31, 17);
+                                        proiettile_enemy = proiettili_enemy.create(enemy.x-43, enemy.y+15, 'proiettile');   
                                         proiettile_enemy.flipX = true;
                                         proiettile_enemy.setVelocityX(-1500);
                                     } else {
                                         var proiettile_enemy = proiettili_enemy.create(enemy.x+43, enemy.y+15, 'proiettile');
-                                        proiettile_enemy.setScale(0.5);
-                                        proiettile_enemy.setSize(9, 5);
-                                        proiettile_enemy.setOffset(31, 17);
                                         proiettile_enemy.setVelocityX(1500);
                                     }
+                                    proiettile_enemy.setScale(0.5);
+                                    proiettile_enemy.setSize(9, 5);
+                                    proiettile_enemy.setOffset(31, 17);
                                     proiettile_enemy.body.setAllowGravity(false);
                                     
                                     proiettile_enemy.setCollideWorldBounds(true);
@@ -939,41 +883,42 @@ function update ()
             scene.scene.restart();
             //scene.scene.start('level1');
         }
-        if (collisione && !ascensore.body.touching.up){
-            collisione = false;
-        }
-        if (collisione && atterrato){
-            //ascensore.setVelocityX(0);
-            ascensore.setVelocityY(-100);
-            player.y = ascensore.y -80;
-            player.setVelocityY(0);
-            //collisione = false;
-            this.time.delayedCall(2690, () => {
-                ascensore.setVelocityY(0);
-                this.time.delayedCall(1000, () => {
-                    atterrato = false;
-                });
-            });
-        } else if (!atterrato){
-            //ascensore.setVelocityX(0);
-            ascensore.setVelocityY(100);
-            if (collisione){
-                player.y = ascensore.y -80;
-                player.setVelocityY(ascensore.body.velocity.y);
-                //player.setVelocityY(0);
-            } else if (ascensore.contatto && ascensore.body.touching.up){
-                player.y = ascensore.y -80;
-            } else {
-                ascensore.contatto = false;
+        if (ascensore){   
+            if (collisione && !ascensore.body.touching.up){
+                collisione = false;
             }
-            
-            
-            //collisione = false;
+            if (collisione && atterrato){
+                //ascensore.setVelocityX(0);
+                ascensore.setVelocityY(-100);
+                player.y = ascensore.y -80;
+                player.setVelocityY(0);
+                //collisione = false;
+                this.time.delayedCall(2690, () => {
+                    ascensore.setVelocityY(0);
+                    this.time.delayedCall(1000, () => {
+                        atterrato = false;
+                    });
+                });
+            } else if (!atterrato){
+                //ascensore.setVelocityX(0);
+                ascensore.setVelocityY(100);
+                if (collisione){
+                    player.y = ascensore.y -80;
+                    player.setVelocityY(ascensore.body.velocity.y);
+                    //player.setVelocityY(0);
+                } else if (ascensore.contatto && ascensore.body.touching.up){
+                    player.y = ascensore.y -80;
+                } else {
+                    ascensore.contatto = false;
+                }  
+                //collisione = false;
+            }
         }
         if (!player.colpito){
             if (controlKey.isDown && !player.isRolling && time - player.tempoSchivata>=schivataRate){
                 player.anims.play("roll");
                 player.tempoSchivata = time;
+                isReloading = false;
                 if (player.flipX){
                     player.setVelocityX(-300);
                 } else {
@@ -988,13 +933,13 @@ function update ()
                     player.setOffset(40, 60);
                 })
             }
-            if (ammo < 5 && rKey.isDown & player.body.touching.down){
+            if (ammo < 5 && rKey.isDown & player.body.touching.down && !isReloading){
                 player.setVelocityX(0);
                 player.anims.play('reload', true);
                 isReloading = true;
-                if (isReloading && !player.colpito){
+                if (isReloading && !player.colpito && !player.isRolling){
                     this.time.delayedCall(player.anims.currentAnim.duration, () => {
-                        if (isReloading && !player.colpito){
+                        if (isReloading && !player.colpito && !player.isRolling){
                             ammo = 5;
                             barraAmmo.anims.play('ammoBar5');
                             //ammoText.setText('Munizioni: ' + ammo);
@@ -1074,7 +1019,7 @@ function update ()
                                     proiettili.children.iterate(function (proiettile) {
                                         scene.physics.world.on('worldbounds', function(body) {
                                             if (body.gameObject === proiettile) {
-                                                proiettile.destroy();
+                                                proiettile.destroy();                         
                                             }
                                         }, this);
                                     });
@@ -1282,6 +1227,28 @@ function levelUp(){
         variabiliNemici();
     }
 }
+function dannoBoss(boss, proiettile){
+    if (boss.vita > 1){
+        boss.nemicoColpito = true;
+        boss.anims.play('boss_hurt', true);
+        proiettile.destroy();
+        boss.isFiring = false;
+        scene.time.delayedCall(boss.anims.currentAnim.duration, () => {
+            boss.nemicoColpito = false;
+        });
+    } else if (!boss.morto){
+        proiettile.destroy();
+        boss.morto = true;
+        boss.anims.play("boss_death", true);
+        scene.time.delayedCall(boss.anims.currentAnim.duration, ()=>{
+            boss.destroy();
+        })
+    }
+    boss.vita--;
+    if ((27 - boss.vita) != 0 && (27 - boss.vita) % 3 === 0){
+            bossBar.barra.pop().destroy();
+        }
+}
 function contattoDrone(player, drone){
     drone.inizioEsp = true;
     drone.anims.play('drone_esplodi', true);
@@ -1382,6 +1349,7 @@ function collider(scena){
     scena.physics.world.setBoundsCollision(true, true, true, true);
     //  Collide the player and the stars with the platforms
     scena.physics.add.collider(player, platforms);
+    scena.physics.add.collider(boss, platforms);
     scena.physics.add.collider(enemies, ascensori);
     scena.physics.add.collider(enemies, platforms);
     scena.physics.add.collider(fermi,ascensori);
@@ -1397,6 +1365,7 @@ function collider(scena){
     scena.physics.add.overlap(player, drone, contattoDrone, null, this);
     scena.physics.add.collider(player, porte, contattoPorta, null, this);
     scena.physics.add.collider(player, shields, collectLives, null, this);
+    scena.physics.add.overlap(proiettili, boss, dannoBoss, null, this);
 }
 function creaProiettile(){
     if (player.flipX){
@@ -1649,6 +1618,66 @@ function creaAnimazioni(scena){
         frames: scena.anims.generateFrameNumbers('enemy', { start: 18, end: 24 }),
         frameRate: 10,
         repeat: 0
+    });
+    scena.anims.create({
+        key: 'boss_idle',
+        frames: scena.anims.generateFrameNumbers('boss_idle', { start: 0, end: 7 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    scena.anims.create({
+        key: 'boss_run',
+        frames: scena.anims.generateFrameNumbers('boss_run', { start: 0, end: 7 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    scena.anims.create({
+        key: 'boss_hurt',
+        frames: scena.anims.generateFrameNumbers('boss_hurt', { start: 0, end: 2 }),
+        frameRate: 10,
+        repeat: 0
+    });
+    scena.anims.create({
+        key: 'boss_heavy',
+        frames: scena.anims.generateFrameNumbers('boss_heavy', { start: 0, end: 18 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    scena.anims.create({
+        key: 'boss_charge',
+        frames: scena.anims.generateFrameNumbers('boss_charge', { start: 0, end: 5 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    scena.anims.create({
+        key: 'boss_flying',
+        frames: scena.anims.generateFrameNumbers('boss_flying', { start: 0, end: 2 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    scena.anims.create({
+        key: 'boss_jump',
+        frames: scena.anims.generateFrameNumbers('boss_jump', { start: 0, end: 11 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    scena.anims.create({
+        key: 'boss_falling',
+        frames: scena.anims.generateFrameNumbers('boss_falling', { start: 0, end: 2 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    scena.anims.create({
+        key: 'boss_death',
+        frames: scena.anims.generateFrameNumbers('boss_death', { start: 0, end: 13 }),
+        frameRate: 10,
+        repeat: 0
+    });
+    scena.anims.create({
+        key: 'boss_attack',
+        frames: scena.anims.generateFrameNumbers('boss_attack', { start: 0, end: 11 }),
+        frameRate: 10,
+        repeat: -1
     });
 }
 function collectLives (player, shield)
