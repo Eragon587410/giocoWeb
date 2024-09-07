@@ -318,6 +318,7 @@ var bossBar;
 var barra;
 var tocca;
 var audio;
+var missili;
 var portataMinima = 200;
 var portataMassima = 350;
 var livello = 1;
@@ -336,6 +337,7 @@ var barraAmmo;
 var rKey;
 var bombs;
 var blinkingText;
+var esplosioni;
 var granate = 12;
 var granata;
 var shields;
@@ -406,6 +408,8 @@ function preload ()
     this.load.image('barraSfondo', 'assets/barraSfondo.png');
     this.load.image('teschio', 'assets/teschio.png');
     this.load.image('textBox', 'assets/textBox.png');
+    this.load.image('missile', 'assets/missile.png');
+    this.load.spritesheet('esplosioneMissile', 'assets/explosionMissile.png', { frameWidth: 32, frameHeight: 32 });
     for (var i = 1; i <= 6; i++){
         this.load.image(`bossBar${i}`, `assets/boss_bar${i}.png`);
     }
@@ -437,7 +441,7 @@ function createBossFight(){
     gruppi(this);
 
     bossBar = this.physics.add.staticGroup();
-    bossBar.vuto = bossBar.create(600, 150, "bossBarVuota").setScale(0.5);
+    bossBar.vuoto = bossBar.create(600, 150, "bossBarVuota").setScale(0.5);
     bossBar.barra = new Array();
     addBossBarLife(221, 152, 6);
     addBossBarLife(305.5, 152, 2);
@@ -459,7 +463,7 @@ function createBossFight(){
     kKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K);
     player = this.physics.add.sprite(100, 444, 'dude');
     cursors = this.input.keyboard.createCursorKeys();
-    boss = this.physics.add.sprite(400, 300, 'boss_idle');
+    boss = this.physics.add.sprite(800, 300, 'boss_idle');
     boss.tacche = 0;
     boss.canFight = true;
     boss.setScale(0.5).refreshBody();
@@ -468,9 +472,10 @@ function createBossFight(){
     boss.anims.play('boss_idle', true);
     boss.ultimoSparo = -700;
     boss.vita = 27;
+    missili = this.physics.add.group();
     //boss.body.immovable= true;
     //boss.body.setAllowGravity(false)
-    collider(this);
+    
     ammo = 5;
     barra = this.physics.add.sprite(200, 100, 'barra').setScale(0.2);
     barra.body.immovable= true;
@@ -479,6 +484,7 @@ function createBossFight(){
     barraAmmo = this.physics.add.sprite(93, 200, 'ammoBar').setScale(2.5);
     barraAmmo.body.immovable= true;
     barraAmmo.body.allowGravity= false;
+    collider(this);
 }
 function createTutorial (){
     scene = this;
@@ -992,16 +998,16 @@ function update ()
                         isGranating = false;
                     });
                     granate--;
-                } else if (!isGranating){
+                } else if (!isGranating && !player.isRolling && !isReloading){
                 
-                    if (!player.colpito && cursors.space.isDown && (time - ultimoSparo) > fireRate && ammo > 0 && player.body.touching.down){
+                    if (!player.colpito && cursors.space.isDown && (time - ultimoSparo) > fireRate && ammo > 0 && player.body.touching.down&& !player.isRolling && !isReloading){
                         player.setVelocityX(0);
                         player.anims.play('fire', true);
                         ultimoSparo = time;
                         isFiring = true;
-                        if (isFiring&& !player.colpito){
+                        if (isFiring&& !player.colpito&& !player.isRolling && !isReloading){
                             this.time.delayedCall(200, () => {
-                                if (isFiring&& !player.colpito){
+                                if (isFiring&& !player.colpito&& !player.isRolling && !isReloading){
                                     proiettilePartito = true;
                                     creaProiettile();
                                     if (ammo == 4){
@@ -1231,6 +1237,41 @@ function levelUp(){
         variabiliNemici();
     }
 }
+function esplodi(player, missile){
+    
+    var esplosione = scene.physics.add.sprite(missile.x, missile.y, 'esplosioneMissile');
+    esplosioni.add(esplosione);
+    esplosione.body.setAllowGravity(false);
+    esplosione.setScale(6);
+    esplosione.anims.play("esplosioneMissile", true);
+    //missile.setVelocity(0,0);
+    missile.destroy();
+    scene.time.delayedCall(esplosione.anims.currentAnim.duration, ()=>{
+        esplosione.destroy();
+    });
+}
+function missile(){
+    boss.anims.play("boss_heavy", true);
+    scene.time.delayedCall(1500, () => {
+        var missile = missili.create(boss.x+30, boss.y-100, 'missile');//scene.physics.add.sprite(boss.x+30, boss.y-100, 'missile');
+        //missili.add(missile);
+        missile.flipX = true;
+        missile.setVelocityX(-300);
+        scene.time.delayedCall(1000, () => {
+            missile.body.setAllowGravity(false);
+            missile.setVelocity(((player.x - missile.x) / distanzaPlayerEnemy(player, missile)) * 600, ((player.y - missile.y+30) / distanzaPlayerEnemy(player, missile)) * 600);
+            let deltaX = player.x - missile.x;
+            let deltaY = player.y - missile.y;
+
+            // Calcola l'angolo in radianti
+            let angle = Math.atan2(deltaY, deltaX);
+
+            // Converti l'angolo da radianti a gradi, poiché Phaser usa gradi per la rotazione
+            let angleDegrees = Phaser.Math.RadToDeg(angle);
+            missile.angle = angleDegrees+180;
+        });
+    });
+}
 function dannoBoss(boss, proiettile){
     if (boss.canFight){
         boss.vita--;
@@ -1239,7 +1280,7 @@ function dannoBoss(boss, proiettile){
             boss.anims.play('boss_hurt', true);
             proiettile.destroy();
             boss.isFiring = false;
-            if (boss.vita >= 0 && (27 - boss.vita) != 0 && (27 - boss.vita) % 3 === 0){
+            if (!boss.morto && (27 - boss.vita) != 0 && (27 - boss.vita) % 3 === 0){
                 boss.tacche++;
                 bossBar.barra.pop().destroy();
                 console.log(boss.tacche);
@@ -1262,15 +1303,26 @@ function dannoBoss(boss, proiettile){
                         boss.setVelocityX(0);
                         boss.anims.play("boss_charge", true);
                         scene.time.delayedCall(boss.anims.currentAnim.duration, () => {
-                            boss.anims.play("boss_heavy", true);
+                            missile();
                             scene.time.delayedCall(boss.anims.currentAnim.duration, () => {
-                                boss.body.setAllowGravity(true);
-                                boss.anims.play("boss_falling", true);
-                                scene.time.delayedCall(2000, () => {
-                                    boss.canFight = true;
-                                    boss.nemicoColpito = false;
+                                missile();
+                                scene.time.delayedCall(boss.anims.currentAnim.duration, () => {
+                                    missile();
+                                    scene.time.delayedCall(boss.anims.currentAnim.duration, () => {
+                                        missile();
+                                        scene.time.delayedCall(boss.anims.currentAnim.duration, () => {
+                                            boss.body.setAllowGravity(true);
+                                            boss.anims.play("boss_falling", true);
+                                            scene.time.delayedCall(2000, () => {
+                                                boss.canFight = true;
+                                                boss.nemicoColpito = false;
+                                            });
+                                        });
+                                    });
                                 });
                             });
+
+                            
 
                         });
                     });
@@ -1284,8 +1336,12 @@ function dannoBoss(boss, proiettile){
             proiettile.destroy();
             boss.morto = true;
             boss.anims.play("boss_death", true);
+            bossBar.barra.pop().destroy();
+            
+            
             scene.time.delayedCall(boss.anims.currentAnim.duration, ()=>{
                 boss.destroy();
+                bossBar.vuoto.destroy();
             })
         }
     }
@@ -1387,6 +1443,10 @@ function gruppi(scena){
     ascensori = scena.physics.add.group();
     fermi = scena.physics.add.staticGroup();
     porte = scena.physics.add.staticGroup();
+    esplosioni = scena.physics.add.group();
+}
+function prova(){
+    playerDead();
 }
 function collider(scena){
     scena.physics.world.setBoundsCollision(true, true, true, true);
@@ -1397,8 +1457,12 @@ function collider(scena){
     scena.physics.add.collider(enemies, platforms);
     scena.physics.add.collider(fermi,ascensori);
     scena.physics.add.collider(shields, platforms);
+    scena.physics.add.overlap(player, missili, esplodi, null, this);
+    scena.physics.add.collider(platforms, missili, esplodi, null, this);
+    
     scena.physics.add.collider(ascensori, platforms, setVariabile, null, this);
     scena.physics.add.overlap(player, ascensori, ascensoreFunziona, null, this);
+    scena.physics.add.overlap(player, esplosioni, prova, null, this);
     scena.physics.add.collider(proiettili, fermi);
     //this.physics.add.collider(proiettili, this.physics.world.bounds, collisionCallback, null, this);
     //this.physics.add.collider(proiettili_enemy, this.physics.world.bounds, collisionCallbackEnemy, null, this);
@@ -1530,6 +1594,12 @@ function creaAnimazioni(scena){
         key: 'barra3',
         frames: [ { key: 'barra', frame: 2 } ],
         frameRate: 20
+    });
+    scena.anims.create({
+        key: 'esplosioneMissile',
+        frames: scena.anims.generateFrameNumbers('esplosioneMissile', { start: 0, end: 7 }),
+        frameRate: 10,
+        repeat: 0
     });
     scena.anims.create({
         key: 'drone_idle',
